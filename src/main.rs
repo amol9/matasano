@@ -4,5 +4,5 @@ mod hextobase64;
 
 fn main() {
 	println!("Hello, world!");
-	//hextobase64::test();
+	hextobase64::hex_to_base64("7162375123f");
 }
