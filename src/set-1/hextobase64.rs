@@ -4,20 +4,14 @@ use self::rustc_serialize::hex::{FromHex, FromHexError};
 use std::char;
 use std::error;
 use std::fmt;
-use std::vec;
+use std::io;
 
-
-pub enum XXError {
-	RawToBase64Error,
-	Base64IndexError,
-	HexToRawError,
-	OrdinalError
-}
 
 #[derive(Debug)]
 pub struct Error {
 	cause: String,
 }
+
 
 impl error::Error for Error {
 	fn description(&self) -> &str {
@@ -32,6 +26,7 @@ impl fmt::Display for Error {
 		Ok(())
 	}
 }
+
 
 pub fn hex_to_raw(input: &str) -> Result<Vec<u8>, FromHexError> {
 	return input.from_hex();
@@ -60,6 +55,12 @@ fn base64_lookup(index: u8) -> Result<char, Error> {
 	}
 }
 
+
+fn debug_print(msg: &str) {
+	println!("{}", msg);
+}
+
+
 pub fn raw_to_base64(input: Vec<u8>) -> Result<String, Error> {
 	let mut index: usize	= 0;
 	let mut v		= Vec::new();
@@ -68,7 +69,12 @@ pub fn raw_to_base64(input: Vec<u8>) -> Result<String, Error> {
 
 	while index < input.len() {
 		if (index + 3 > input.len()) {
-			pad = input.len() - (index + 3);
+			pad =  (index + 3) - input.len();
+
+			for i in 0..(3-pad) {
+				v.push(input[index+i]);
+			}
+
 			for i in 0..pad {
 				v.push(0);
 			}
@@ -84,39 +90,34 @@ pub fn raw_to_base64(input: Vec<u8>) -> Result<String, Error> {
 		let mut b64char: char = try!(base64_lookup(b64index));
 		output.push(b64char);
 
-
 		b64index = v[0] << 6;
 		b64index = b64index >> 2 | v[1] >> 4;
 		b64char = try!(base64_lookup(b64index));
 		output.push(b64char);
 
 		if pad == 2 {
+			output.push_str("==");
 			break;
 		}
 
 		b64index = v[1] & 0xF;	//??
-		b64index = v[1] << 2 | v[2] >> 6;
+		b64index = b64index << 2 | v[2] >> 6;
+
 		b64char = try!(base64_lookup(b64index));
 		output.push(b64char);
 
 		if pad == 1 {
+			output.push_str("=");
 			break;
 		}
 
 		b64index = v[2] & 0x3F;
 		b64char = try!(base64_lookup(b64index));
 		output.push(b64char);
+
+		v.clear();
 	}
 				
-	// if index + 3 < len(vec)
-	// do padding
-	// rem
-	// get 4 b64 items by shifting
-	// 
-	// do lookup and find corr b64 chars
-	// append to output
-	// handle padding
-
 	return Ok(output);
 }
 
@@ -126,7 +127,7 @@ pub fn hex_to_base64(input: &str) -> Result<String, Error> {
 
 	let raw = match r {
 		Ok(v)	=> v,
-		Err(e)	=> return Err(Error {cause: String::from("error in converting hex to raw")}),
+		Err(e)	=> return Err(Error {cause: String::from(format!("{}", e))} ),
 	};
 
 	let r: Result<String, Error> = raw_to_base64(raw);
@@ -137,48 +138,16 @@ pub fn hex_to_base64(input: &str) -> Result<String, Error> {
 	}
 }
 
-fn test_throw() -> Result<String, Error> {
-	Err(Error {cause: String::from("test error") })
-}
 
 pub fn interactive() {
+	let mut input = String::new();
 
-}
+	println!("enter a hex number: ");
+	io::stdin().read_line(&mut input);
 
-#[test]
-fn test_two() {
-	let input = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
-
-	//let r: Result<String, Error> = test_throw();
-	let r: Result<String, Error> = hex_to_base64(input);
-
-	let base64 = match r {
-		Ok(v)	=> v,
-		Err(e)	=> {
-				println!("{}", e);
-				String::from("123")
-			   }
-	};
-
-	println!("{}", base64);
-}
-
-
-fn print_raw(raw: Vec<u8>) {
-	for i in raw {
-		print!("{} ", i);
-	}
-	println!("");
-}
-
-#[test]
-fn test_hex_to_raw() {
-	let input = "00ff";
-	let input = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
-	match hex_to_raw(input) {
-		Ok(v)	=> print_raw(v),
-		Err(e)	=> println!("error: {}", e)
+	match hex_to_base64(&input) {
+		Ok(v)	=> println!("{}", v),
+		Err(e)	=> println!("{}", e),
 	}
 }
-
 
