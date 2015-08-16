@@ -1,36 +1,11 @@
-extern crate rustc_serialize;
-
-use self::rustc_serialize::hex::{FromHex, FromHexError};
 use std::char;
-use std::error;
-use std::fmt;
 use std::io;
 
+mod lib;
 
-#[derive(Debug)]
-pub struct Error {
-	cause: String,
-}
-
-
-impl error::Error for Error {
-	fn description(&self) -> &str {
-		&self.cause
-	}
-}
-
-
-impl fmt::Display for Error {
-	fn fmt(&self, fmtr: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-		println!("{}", self.cause);
-		Ok(())
-	}
-}
-
-
-pub fn hex_to_raw(input: &str) -> Result<Vec<u8>, FromHexError> {
-	return input.from_hex();
-}
+//pub fn hex_to_raw(input: &str) -> Result<Vec<u8>, FromHexError> {
+//	return input.from_hex();
+//}
 
 
 // base64 encoding:
@@ -39,19 +14,19 @@ pub fn hex_to_raw(input: &str) -> Result<Vec<u8>, FromHexError> {
 // 52 - 61 : 0 - 9
 // 62 : +
 // 63 : /
-fn base64_lookup(index: u8) -> Result<char, Error> {
+fn base64_lookup<'a>(index: u8) -> Result<char, err::Error<'a>> {
 	let ord: u8 = match index {
 		0...25	=> index + 65,
 		26...51	=> index + 71,
 		52...61	=> index - 4,
 		62	=> 43,
 		63	=> 47,
-		_	=> return Err(Error {cause: String::from("base64 index out of range")}),
+		_	=> return Err(make_error(&format!("base64 index out of range: {}", index))),
 	};
 
 	match char::from_u32(ord as u32) {
 		Some(v)	=> Ok(v),
-		None	=> Err(Error {cause: String::from("bad ordinal")}),
+		None	=> Err(make_error(&format!("bad ordinal: {}", ord))),
 	}
 }
 
@@ -61,7 +36,7 @@ fn debug_print(msg: &str) {
 }
 
 
-pub fn raw_to_base64(input: Vec<u8>) -> Result<String, Error> {
+pub fn raw_to_base64<'a>(input: Vec<u8>) -> Result<String, err::Error<'a>> {
 	let mut index: usize	= 0;
 	let mut v		= Vec::new();
 	let mut output		= String::new();
@@ -122,19 +97,19 @@ pub fn raw_to_base64(input: Vec<u8>) -> Result<String, Error> {
 }
 
 
-pub fn hex_to_base64(input: &str) -> Result<String, Error> {
-	let r: Result<Vec<u8>, FromHexError> = hex_to_raw(input);
+pub fn hex_to_base64(input: &str) -> Result<String, err::Error> {
+	let r: Result<Vec<u8>, err::Error> = hex::hex_to_raw(input);
 
 	let raw = match r {
 		Ok(v)	=> v,
-		Err(e)	=> return Err(Error {cause: String::from(format!("{}", e))} ),
+		Err(e)	=> return Err(make_error(e)),
 	};
 
-	let r: Result<String, Error> = raw_to_base64(raw);
+	let r: Result<String, err::Error> = raw_to_base64(raw);
 
 	match r {
 		Ok(v)	=> Ok(v),
-		Err(e)	=> Err(Error {cause: String::from("error in converting raw to base64")}),
+		Err(e)	=> Err(make_error(e)),
 	}
 }
 
