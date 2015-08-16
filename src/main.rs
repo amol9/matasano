@@ -2,8 +2,8 @@ use std::env;
 use std::process;
 use std::convert::AsRef;
 
-#[path = "set-1/hextobase64.rs"]
-mod hextobase64;
+extern crate matasano;
+use self::matasano::set1::{hextobase64, fixedxor};
 
 
 fn main() {
@@ -18,6 +18,7 @@ fn main() {
 
 	match problem.as_ref() {
 		"hextobase64"	=> hextobase64::interactive(),
-		_		=> unreachable!("error"),
-	}
+		"fixedxor"	=> fixedxor::interactive(),
+		_		=> panic!("error"),
+	};
 }

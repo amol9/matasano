@@ -3,19 +3,19 @@ use std::fmt;
 
 
 #[derive(Debug)]
-pub struct Error<'a> {
-	cause: &'a str,
+pub struct Error {
+	cause: String,
 }
 
 
-impl<'a> error::Error for Error<'a> {
+impl error::Error for Error {
 	fn description(&self) -> &str {
 		&self.cause
 	}
 }
 
 
-impl<'a> fmt::Display for Error<'a> {
+impl fmt::Display for Error {
 	fn fmt(&self, fmtr: &mut fmt::Formatter) -> Result<(), fmt::Error> {
 		println!("{}", self.cause);
 		Ok(())
@@ -23,7 +23,7 @@ impl<'a> fmt::Display for Error<'a> {
 }
 
 
-pub fn make_error(msg: &str) -> Error {
+pub fn make_error(msg: String) -> Error {
 	Error {cause: msg}
 }
 
