@@ -15,14 +15,17 @@ pub fn xor_raw(x: Vec<u8>, y: Vec<u8>) -> Result<Vec<u8>, err::Error> {
 	Ok(result)
 }
 
-//add size eq check
 pub fn xor_hex(x: &str, y: &str) -> Result<String, err::Error> {
+	if (x.len() != y.len()) {
+		return Err(err::make_error(String::from("unequal number of hex digits")));
+	}
+
 	let rx: Vec<u8> =  try!(hex::hex_to_raw(x));
 	let ry: Vec<u8> =  try!(hex::hex_to_raw(y));
 
 	let rr: Vec<u8> = try!(xor_raw(rx, ry));
 
-	let result = try!(hex::raw_to_hex(rr));
+	let result = try!(hex::raw_to_hex(&rr));
 	Ok(result)
 }
 
@@ -42,7 +45,7 @@ pub fn interactive() -> u32 {
 
 	let result = String::new();
 
-	match xor_hex(&x, &y) {
+	match xor_hex(&x.trim(), &y.trim()) {
 		Ok(v)	=> {
 				println!("{}", v);
 				0

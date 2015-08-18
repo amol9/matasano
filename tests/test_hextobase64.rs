@@ -1,9 +1,9 @@
-#[path = "../src/set-1/hextobase64.rs"]
-mod hextobase64;
+extern crate matasano;
+use self::matasano::common::{base64, err};
 
 
 fn test_hex_to_base64(input: &str, output: &str) {
-	let r: Result<String, hextobase64::Error> = hextobase64::hex_to_base64(input);
+	let r: Result<String, err::Error> = base64::hex_to_base64(input);
 
 	let base64 = match r {
 		Ok(v)	=> v,
@@ -36,21 +36,5 @@ fn test_more() {
 }
 
 
-fn print_raw(raw: Vec<u8>) {
-	for i in raw {
-		print!("{} ", i);
-	}
-	println!("");
-}
 
-
-//#[test]
-fn test_hex_to_raw() {
-	let input = "00ff";
-	let input = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
-	match hextobase64::hex_to_raw(input) {
-		Ok(v)	=> print_raw(v),
-		Err(e)	=> println!("error: {}", e)
-	}
-}
 

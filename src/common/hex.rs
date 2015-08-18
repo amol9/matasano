@@ -1,10 +1,12 @@
 use std::io;
 use std::ascii::AsciiExt;
+use std::char;
 
 use common::err;
 
+
 pub fn hex_to_raw(input: &str) -> Result<Vec<u8>, err::Error> {
-	if (input.len() % 2 == 1) {
+	if (((input.len()) % 2) == 1) {
 		return Err(err::make_error(String::from("need an even number of hex digits")));
 	}
 
@@ -14,8 +16,8 @@ pub fn hex_to_raw(input: &str) -> Result<Vec<u8>, err::Error> {
 	let mut chars_iter = input.chars();
 
 	for i in 0..(input.len()/2) {
-		let a: u8 = try!(hex_char_to_int(chars_iter.next().unwrap()));
-		let b: u8 = try!(hex_char_to_int(chars_iter.next().unwrap()));
+		let a: u8 = try!(hex_char_to_u8(chars_iter.next().unwrap()));
+		let b: u8 = try!(hex_char_to_u8(chars_iter.next().unwrap()));
 
 		let i: u8 = a << 4 | b;
 		raw.push(i);
@@ -26,7 +28,7 @@ pub fn hex_to_raw(input: &str) -> Result<Vec<u8>, err::Error> {
 }
 
 
-pub fn hex_char_to_int(hex_char: char) -> Result<u8, err::Error> {
+pub fn hex_char_to_u8(hex_char: char) -> Result<u8, err::Error> {
 	if (hex_char >= '0' && hex_char <= '9') {
 		return Ok(hex_char as u8 - 48);
 	}
@@ -41,6 +43,26 @@ pub fn hex_char_to_int(hex_char: char) -> Result<u8, err::Error> {
 }
 
 
-pub fn raw_to_hex(raw: Vec<u8>) -> Result<String, err::Error> {
-	Ok(String::from("123"))	
+pub fn u8_to_hex_char(dec: u8) -> Result<char, err::Error> {
+	if (dec > 15) {
+		return Err(err::make_error(String::from("must be a 4-bit decimal")));
+	}
+
+	let hex_char: char = match dec {
+		0 ... 10 	=> char::from_u32(dec as u32 + 48).unwrap(),
+		10 ... 15	=> char::from_u32(dec as u32 + 55).unwrap(), 
+		_		=> return Err(err::make_error(String::from(format!("unreachable, dec: {}", dec))))
+	};
+	Ok(hex_char)
+}
+
+
+pub fn raw_to_hex(raw: &Vec<u8>) -> Result<String, err::Error> {
+	let mut result: String = String::new();
+
+	for n in raw {
+		result.push(try!(u8_to_hex_char(n >> 4)));
+		result.push(try!(u8_to_hex_char(n & 0xF)));
+	}
+	Ok(result)
 }
