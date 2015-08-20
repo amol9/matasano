@@ -7,8 +7,8 @@ use std::f32;
 use common::{ascii, err, hex};
 
 
-fn compute_base_frequency() -> Result<Vec<f32>, err::Error> {
-    let mut f = etry!(File::open("pg1342_ascii.txt"), "sample data file cannot be opened..");
+pub fn compute_base_frequency() -> Result<Vec<f32>, err::Error> {
+    let mut f = etry!(File::open("/home/amol/projects/matasano/src/set1/pg1342_ascii.txt"), "sample data file cannot be opened..");
     let mut text = String::new();
 
     etry!(f.read_to_string(&mut text), "cannot read sample data file..");
@@ -46,7 +46,7 @@ pub fn decipher(cipher: &str) -> Result<String, err::Error> {
             let ch = char::from_u32(i).unwrap();
             dist_total += (avg_freq[i as usize] - guess_freq[i as usize]).abs();
         }
-        guess_dist.push(dist_total / guess.len() as f32);
+        guess_dist.push(dist_total);
     }
 
     let best_key = try!(min_distance_key(&guess_dist));
@@ -69,7 +69,7 @@ fn min_distance_key(guess_distances: &Vec<f32>) -> Result<u8, err::Error> {
 }
 
 
-fn decrypt(cipher: &str, key: u8) -> Result<String, err::Error> {
+pub fn decrypt(cipher: &str, key: u8) -> Result<String, err::Error> {
     let raw: Vec<u8> = try!(hex::hex_to_raw(cipher));
     let mut result: Vec<u8> = Vec::new();
 
