@@ -66,3 +66,4 @@ pub fn raw_to_hex(raw: &Vec<u8>) -> Result<String, err::Error> {
 	}
 	Ok(result)
 }
+

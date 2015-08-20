@@ -34,6 +34,21 @@ pub fn make_error(msg: String) -> Error {
 	Error {cause: msg}
 }
 
+pub fn make(msg: String) -> Error {
+	Error {cause: msg}
+}
+
+macro_rules! mkerr {
+    ( $x : expr ) => ( Err(err::make(String::from($x))) );
+}
+
+#[macro_export]
+macro_rules! etry {
+    ( $expr : expr , $msg : expr ) => ( match $expr {
+                            Ok(v)   => { v },
+                            Err(e)  => { println!("{}", e); return mkerr!($msg) },
+                            } );
+}
 
 pub enum ExitCode {
 	Success = 0,
