@@ -3,7 +3,7 @@ use std::process;
 use std::convert::AsRef;
 
 extern crate matasano;
-use self::matasano::set1::{hextobase64, fixedxor};
+use self::matasano::set1::{hextobase64, fixedxor, xorcipher};
 
 
 fn main() {
@@ -18,7 +18,8 @@ fn main() {
 
 	match problem.as_ref() {
 		"hextobase64"	=> hextobase64::interactive(),
-		"fixedxor"	=> fixedxor::interactive(),
-		_		=> panic!("error"),
+		"fixedxor"	    => fixedxor::interactive(),
+        "xorcipher"     => xorcipher::interactive(),
+		_		        => panic!("error"),
 	};
 }
