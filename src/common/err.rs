@@ -50,6 +50,14 @@ macro_rules! etry {
                             } );
 }
 
+macro_rules! rtry {
+    ( $expr : expr , $ret : expr ) => ( match $expr {
+                            Ok(v)   => { v },
+                            Err(e)  => { return $ret }
+                            } );
+}
+
+
 pub enum ExitCode {
 	Success = 0,
 	Error

@@ -49,7 +49,7 @@ pub fn u8_to_hex_char(dec: u8) -> Result<char, err::Error> {
 	}
 
 	let hex_char: char = match dec {
-		0 ... 10 	=> char::from_u32(dec as u32 + 48).unwrap(),
+		0 ... 9 	=> char::from_u32(dec as u32 + 48).unwrap(),
 		10 ... 15	=> char::from_u32(dec as u32 + 55).unwrap(), 
 		_		=> return Err(err::make_error(String::from(format!("unreachable, dec: {}", dec))))
 	};
