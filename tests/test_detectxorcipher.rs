@@ -19,3 +19,4 @@ fn test_cryptopals_case() {
 
     assert_eq!(output, String::from("7b5a4215415d544115415d5015455447414c155c46155f4058455c5b523f")); 
 }
+

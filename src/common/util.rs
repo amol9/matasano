@@ -1,5 +1,7 @@
 use std::cmp;
 use std::iter;
+use std::io;
+use std::io::prelude::*;
 
 
 const F32_ZERO: f32 = 1.0e-40_f32;
@@ -21,3 +23,11 @@ pub fn min_index<T: PartialOrd>(list: &Vec<T>) -> Option<usize> {
     Some(min_index)
 }
 
+
+macro_rules! input {
+    ( $msg: expr, $str: expr ) => ( 
+        print!($msg);
+        rtry!(io::stdout().flush(), 1);
+        io::stdin().read_line($str);
+    );
+}

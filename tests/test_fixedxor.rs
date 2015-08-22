@@ -10,7 +10,7 @@ fn test_cryptopals_case() {
 	let r = "746865206b696420646f6e277420706c6179";
 
 	match fixedxor::xor_hex(&x, &y) {
-		Ok(v)	=> assert_eq!(v, r.to_uppercase()),
+		Ok(v)	=> assert_eq!(v, r),
 		Err(e)	=> {println!("{}", e); assert!(false);},
 	}
 }

@@ -34,7 +34,7 @@ macro_rules! htr_err {
 
 
 macro_rules! _rth {
-	( $x:expr, $y:expr, $z: expr ) => ( _gen!($x, $y, $z, hex::raw_to_hex));
+	( $x:expr, $y:expr, $z: expr ) => ( _gen!($x, $y, $z, hex::raw_to_hex::<hex::lower>));
 }
 
 macro_rules! rth {
@@ -67,9 +67,9 @@ fn test_hex_to_raw() {
 #[test]
 fn test_raw_to_hex() {
 	rth!(&vec![0], s!("00"));
-	rth!(&vec![255], s!("FF"));
-	rth!(&vec![170], s!("AA"));
-	rth!(&vec![170, 255], s!("AAFF"));
+	rth!(&vec![255], s!("ff"));
+	rth!(&vec![170], s!("aa"));
+	rth!(&vec![170, 255], s!("aaff"));
 
 	//rth_err!(&vec![345], s!(""));
 	//rth_err!(&vec![256], s!(""));
