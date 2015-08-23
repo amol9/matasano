@@ -23,3 +23,10 @@ pub fn str_to_raw(input: &str) -> Result<Vec<u8>, err::Error> {
     }
     Ok(output)
 }
+
+pub fn u8_to_char(input: u8) -> char {
+    match char::from_u32(input as u32) {
+        Some(v) => v,
+        None    => mkerr!("cannot convert to char: {}", input)
+    }
+}

@@ -1,7 +1,5 @@
 use std::io;
 use std::fs;
-use std::fs::File;
-use std::io::prelude::Read;
 use std::env;
 use std::f32;
 
@@ -10,14 +8,7 @@ use common::cipher::one_byte_xor as obx;
 
 
 pub fn read_input_file(filepath: &str) -> Result<Vec<String>, err::Error> {
-    match fs::metadata(&filepath) {
-        Ok(v)   => {},
-        Err(e)  => etry!(Err(e), "input data file not found"),
-    };
-
-    let mut f = etry!(File::open(&filepath), "cannot open input data file");
-    let mut text = String::new();
-    etry!(f.read_to_string(&mut text), "cannot read input data file");
+    let text = try!(util::read_file_to_str(&filepath));
 
     let mut output = Vec::new();
     for line in text.split('\n') {

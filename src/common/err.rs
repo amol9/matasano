@@ -57,6 +57,13 @@ macro_rules! rtry {
                             } );
 }
 
+macro_rules! ctry {
+    ( $cond : expr , $msg : expr )  => (
+        if !$cond {
+           return mkerr!($msg);
+        } );
+}
+
 
 pub enum ExitCode {
 	Success = 0,
