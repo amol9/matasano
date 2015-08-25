@@ -1,7 +1,12 @@
 use std::io;
 use std::io::prelude::*;
+use std::env;
+use std::ops;
+use std::slice;
 
-use common::{err, cipher, util};
+use common::{err, util, ascii};
+use common::cipher::one_byte_xor as obx;
+use common::cipher::rpt_key_xor as rkx;
 
 
 // read input cipher text file
@@ -11,13 +16,13 @@ use common::{err, cipher, util};
 // combine to make full key
 // decrypt the cipher and print plain text
 
-const KEYLENGTH_RANGE: Range<u8> = (1..40);
+const KEYLENGTH_RANGE: ops::Range<u8> = ops::Range {start: 1, end: 40};
 
 
 pub fn break_cipher(filepath: &str) -> Result<String, err::Error> {
-    let ciphertext = try!(ascii::read_file_to_str(&filepath));
+    let ciphertext = try!(util::read_file_to_str(&filepath));
 
-    let keylength = try!(compute_key_length(&ciphertext));
+    let keylength = try!(guess_key_length(&ciphertext));
 
     let key = try!(guess_key(&ciphertext, keylength));
 
@@ -28,26 +33,52 @@ pub fn break_cipher(filepath: &str) -> Result<String, err::Error> {
 
 
 //check and fix
-pub fn compute_key_length(ciphertext: &str) -> Result<u8, err::Error> {
-    let dist: Vec<f32> = Vec::new();
+pub fn guess_key_length(ciphertext: &str) -> Result<u8, err::Error> {
+    let mut dist: Vec<f32> = Vec::new();
 
     for block_len in KEYLENGTH_RANGE {
-        let blocks = ciphertext.chunks(block_len);
-        let d_total = 0f32;
-        for block_no in (1 .. (blocks.len())).step_by(2) {
-             d_total += util::hamm_vec(blocks.next().unwrap(), blocks.next().unwrap());
+        let cipherbytes: &[u8] = ciphertext.as_ref(); 
+        let mut blocks: slice::Chunks<u8> = cipherbytes.chunks(block_len as usize);
+        let mut d_avg: Option<f32> = None;
+
+        while true {
+            let b1 = match blocks.next() {
+                Some(v) => v.to_vec(),
+                None    => break
+            };
+
+            let b2 = match blocks.next() {
+                Some(v) => v.to_vec(),
+                None    => break
+            };
+
+            if b1.len() != b2.len() {
+                break;
+            }
+
+            let d = etry!(util::hamm_vec(&b1, &b2), "hamming distance calculation error");
+            d_avg = match d_avg {
+                Some(v) => Some((v + d as f32) / 2 as f32),
+                None    => Some(d as f32)
+            };
         }
-        dist.push(d_total / block_len);
+        dist.push(d_avg.unwrap() as f32 / block_len as f32);
     }
-    let keylength = try!(util::min_index(&dist)) as u8 + KEYLENGTH_RANGE.start;
+    let keylength: u8 = util::min_index(&dist).unwrap() as u8 + KEYLENGTH_RANGE.start;
     Ok(keylength)
 }
 
 
 pub fn guess_key(ciphertext: &str, keylength: u8) -> Result<String, err::Error> {
-    let cipher_trans = etry!(util::transpose_iter(ciphertext.iter(), keylength), "cipher text transposing error");
+    //let cipher_trans: Vec<Vec<char>> = etry!(util::transpose_vec::<char>(&ciphertext.chars().collect(), keylength as u32),
+    //                                    "cipher text transposing error");
+    let cipher_trans = etry!(util::transpose_str(&ciphertext, keylength as u32), "transpose error");
 
-    let key: String = cipher_trans.iter().map(|ch| ascii::u8_to_char(try!(obx::guess_key(&ch.into_iter().collect()).key))).collect();
+    let mut key = String::new();
+    for slice in cipher_trans {
+        let keybyte: u8 = try!(obx::try_decipher(&slice)).key;
+        key.push(ascii::u8_to_char(keybyte));
+    }
     Ok(key)
 }
 

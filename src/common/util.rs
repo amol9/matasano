@@ -3,7 +3,9 @@ use std::iter;
 use std::io;
 use std::io::prelude::*;
 use std::fs::File;
-use std::io::prelude::Read;
+use std::fs;
+
+use common::err;
 
 
 const F32_ZERO: f32 = 1.0e-40_f32;
@@ -49,30 +51,53 @@ pub fn read_file_to_str(filepath: &str) -> Result<String, err::Error> {
 }
 
 
-pub fn hammming_distance(a: u8, b: u8) -> u8 {
-    let d: u8 = 0;
+pub fn hamming_distance(a: u8, b: u8) -> u8 {
+    let mut d: u8 = 0;
     let diff = a ^ b;
-    (0 .. 7).map(|i| d += (diff >> i) & 1);
+    for i in (0 .. 8) {
+        d += (diff >> i) & 1;
+    }
     d
 }
 
 
 pub fn hamm_vec(a: &Vec<u8>, b: &Vec<u8>) -> Result<u32, err::Error> {
     ctry!(a.len() == b.len(), "two blocks must be of same size");
-    let d: u32 = 0;
-    etry!((0 .. a.len()).map(|i| d += hammming_distance(a[i], b[i])), "hamming distance calculation error");
+    let mut d: u32 = 0;
+    for i in (0 .. a.len()) {
+        d += hamming_distance(a[i], b[i]) as u32;
+    }
     Ok(d)
 }
 
 
-pub fn transpose_iter<T>(it: iter::Iterator<Item=T>, length: u32) -> Result<Vec<[T]>, err::Error> {
-     let result: Vec<[T]> = Vec::with_capacity(ceil(it.len() / length));
+pub fn transpose_vec<T: Clone>(input: &Vec<T>, length: u32) -> Result<Vec<Vec<T>>, err::Error> {
+    //let slice_count = f32::ceil(input.len() as f32 / length as f32) as usize; 
+    let mut result: Vec<Vec<T>> = Vec::new();
+    for _ in 0 .. length {
+        result.push(Vec::new());
+    }
 
-     for i in 0 .. (it.len() - 1) {
-         if i < result.len() {
-             result[i] = Vec::with_capacity(length);
-         }
-         result[i % length].push(it.next().unwrap());
-     }
-     Ok(result)        
+    println!("result len = {}", f32::ceil(input.len() as f32 / length as f32));
+    let mut i: usize = 0;
+    for v in input {
+        result[(i as u32 % length) as usize].push(v.clone());
+        i += 1;
+    }
+    Ok(result)        
+}
+
+
+pub fn transpose_str(input: &str, length: u32) -> Result<Vec<String>, err::Error> {
+    let mut result = Vec::new();
+    for _ in 0 .. length {
+        result.push(String::new());
+    }
+
+    let mut i: usize = 0;
+    for c in input.chars() {
+        result[(i as u32 % length) as usize].push(c);
+        i += 1;
+    }
+    Ok(result)
 }
