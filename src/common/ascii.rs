@@ -30,3 +30,14 @@ pub fn u8_to_char(input: u8) -> char {
         None    => '?'
     }
 }
+
+
+pub fn filter_whitespace(input: &str) -> Result<String, err::Error> {
+    let mut output = String::new();
+    for c in input.chars() {
+        if !c.is_whitespace() {
+            output.push(c);
+        }
+    }
+    Ok(output)
+}

@@ -36,7 +36,6 @@ fn base64_to_u8(b64char: char) -> Result<u8, err::Error> {
         47          => 63,
         _           => return mkerr!(format!("invalid base64 character: {}", b64char))
     };
-    println!("b64 to u8: {}", r);
     Ok(r)
 }
 
@@ -116,7 +115,6 @@ pub fn base64_to_raw(input: &str) -> Result<Vec<u8>, err::Error> {
             let b4 = try!(base64_to_u8(buf[3]));
 
             let v = vec![b1 << 2 | b2 >> 4, b2 << 4 | b3 >> 2, b3 << 6 | b4];
-            println!("pushing: {} {} {}", v[0], v[1], v[2]);
             output.extend(v);
             buf.clear();
         }

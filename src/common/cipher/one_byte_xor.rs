@@ -38,8 +38,48 @@ pub fn try_decipher(cipher: &str) -> Result<Guess, err::Error> {
 }
 
 
+pub fn guess_key(cipher: &Vec<u8>) -> Result<Guess, err::Error> {
+    let mut guess_dist = Vec::new();
+    let base_freq = try!(charfreq::get_base_freq());
+
+    for key in 0..255 {
+        let guess_raw = try!(decrypt_raw(cipher, key));
+        let guess = try!(ascii::raw_to_str(&guess_raw));
+        let guess_freq = try!(charfreq::compute_char_frequency(&guess));
+        
+        let mut dist_total = 0f32;
+
+        for i in 0..255 as usize {
+            let ch = char::from_u32(i as u32).unwrap();
+            dist_total += (base_freq[i] - guess_freq[i]).abs();
+        }
+        guess_dist.push(dist_total);
+    }
+
+    let best_key = util::min_index(&guess_dist).unwrap() as u8;
+
+    Ok(Guess {
+        plain:      String::from(""),
+        key:        best_key,
+        distance:   guess_dist[best_key as usize]
+    })
+}
+
+
+pub fn decrypt_raw(cipher: &Vec<u8>, key: u8) -> Result<Vec<u8>, err::Error> {
+    //let raw: Vec<u8> = cipher.chars().map(|c| c as u8).collect();
+    let mut result: Vec<u8> = Vec::new();
+
+    for byte in cipher {
+       result.push(byte ^ key); 
+    }
+
+    Ok(result)
+}
+
+
 pub fn decrypt(cipher: &str, key: u8) -> Result<String, err::Error> {
-    let raw: Vec<u8> = cipher.chars().map(|c| c as u8).collect();                     //try!(hex::hex_to_raw(cipher));
+    let raw: Vec<u8> = try!(hex::hex_to_raw(cipher));
     let mut result: Vec<u8> = Vec::new();
 
     for byte in raw {
