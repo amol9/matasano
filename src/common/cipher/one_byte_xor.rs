@@ -39,13 +39,13 @@ pub fn try_decipher(cipher: &str) -> Result<Guess, err::Error> {
 
 
 pub fn decrypt(cipher: &str, key: u8) -> Result<String, err::Error> {
-    let raw: Vec<u8> = try!(hex::hex_to_raw(cipher));
+    let raw: Vec<u8> = cipher.chars().map(|c| c as u8).collect();                     //try!(hex::hex_to_raw(cipher));
     let mut result: Vec<u8> = Vec::new();
 
     for byte in raw {
        result.push(byte ^ key); 
     }
 
-    ascii::raw_to_string(&result)
+    ascii::raw_to_str(&result)
 }
 

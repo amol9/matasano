@@ -54,3 +54,9 @@ fn test_transpose_vec() {
     assert_eq!(match_res!(util::transpose_vec(&input, 4)), vec![vec![1, 1, 1], vec![2, 2, 2], vec![3, 3], vec![4, 4]]);
 }
 
+
+#[test]
+fn test_transpose_str() {
+    let input = s!("abcdabcdabcdabcdabc");
+    assert_eq!(match_res!(util::transpose_str(&input, 4)), vec![s!("aaaaa"), s!("bbbbb"), s!("ccccc"), s!("dddd")]);
+}

@@ -10,20 +10,34 @@ use common::{err, hex};
 // 52 - 61 : 0 - 9
 // 62 : +
 // 63 : /
-fn base64_lookup(index: u8) -> Result<char, err::Error> {
+fn u8_to_base64(index: u8) -> Result<char, err::Error> {
 	let ord: u8 = match index {
-		0...25	=> index + 65,
-		26...51	=> index + 71,
-		52...61	=> index - 4,
-		62	=> 43,
-		63	=> 47,
-		_	=> return Err(err::make_error(format!("base64 index out of range: {}", index))),
+		0 ... 25	=> index + 65,
+		26 ... 51	=> index + 71,
+		52 ... 61	=> index - 4,
+		62	        => 43,
+		63	        => 47,
+		_	        => return Err(err::make_error(format!("base64 index out of range: {}", index))),
 	};
 
 	match char::from_u32(ord as u32) {
 		Some(v)	=> Ok(v),
 		None	=> Err(err::make_error(format!("bad ordinal: {}", ord))),
 	}
+}
+
+
+fn base64_to_u8(b64char: char) -> Result<u8, err::Error> {
+    let r = match b64char as u8 {
+        65 ... 90   => b64char as u8 - 65,
+        97 ... 122  => b64char as u8 - 71,
+        48 ... 57   => b64char as u8 + 4,
+        43          => 62,
+        47          => 63,
+        _           => return mkerr!(format!("invalid base64 character: {}", b64char))
+    };
+    println!("b64 to u8: {}", r);
+    Ok(r)
 }
 
 
@@ -53,12 +67,12 @@ pub fn raw_to_base64(input: Vec<u8>) -> Result<String, err::Error> {
 		index += 3;
 
 		let mut b64index: u8 = v[0] >> 2;
-		let mut b64char: char = try!(base64_lookup(b64index));
+		let mut b64char: char = try!(u8_to_base64(b64index));
 		output.push(b64char);
 
 		b64index = v[0] << 6;
 		b64index = b64index >> 2 | v[1] >> 4;
-		b64char = try!(base64_lookup(b64index));
+		b64char = try!(u8_to_base64(b64index));
 		output.push(b64char);
 
 		if pad == 2 {
@@ -66,10 +80,10 @@ pub fn raw_to_base64(input: Vec<u8>) -> Result<String, err::Error> {
 			break;
 		}
 
-		b64index = v[1] & 0xF;	//??
+		b64index = v[1] & 0xF;
 		b64index = b64index << 2 | v[2] >> 6;
 
-		b64char = try!(base64_lookup(b64index));
+		b64char = try!(u8_to_base64(b64index));
 		output.push(b64char);
 
 		if pad == 1 {
@@ -78,13 +92,54 @@ pub fn raw_to_base64(input: Vec<u8>) -> Result<String, err::Error> {
 		}
 
 		b64index = v[2] & 0x3F;
-		b64char = try!(base64_lookup(b64index));
+		b64char = try!(u8_to_base64(b64index));
 		output.push(b64char);
 
 		v.clear();
 	}
 				
 	return Ok(output);
+}
+
+
+pub fn base64_to_raw(input: &str) -> Result<Vec<u8>, err::Error> {
+    let mut buf: Vec<char> = Vec::new();
+    let mut output = Vec::new();
+
+    for b64char in input.chars() {
+        buf.push(b64char);
+
+        if (buf.len() == 4 && b64char != '=') {
+            let b1 = try!(base64_to_u8(buf[0])); 
+            let b2 = try!(base64_to_u8(buf[1])); 
+            let b3 = try!(base64_to_u8(buf[2])); 
+            let b4 = try!(base64_to_u8(buf[3]));
+
+            let v = vec![b1 << 2 | b2 >> 4, b2 << 4 | b3 >> 2, b3 << 6 | b4];
+            println!("pushing: {} {} {}", v[0], v[1], v[2]);
+            output.extend(v);
+            buf.clear();
+        }
+    }
+
+    if buf.len() > 0 {
+        match buf.iter().filter(|&c| *c == '=').count() {
+        2   => { 
+            let b1 = try!(base64_to_u8(buf[0]));
+            let b2 = try!(base64_to_u8(buf[1])); 
+            output.push(b1 << 2 | b2 >> 4);
+            }
+        1   => {
+            let b1 = try!(base64_to_u8(buf[0]));
+            let b2 = try!(base64_to_u8(buf[1])); 
+            let b3 = try!(base64_to_u8(buf[2])); 
+            output.extend(vec![b1 << 2 | b2 >> 4, b2 << 4 | b3 >> 2]);
+            },
+        _   => return mkerr!("invalid base64 input")
+        };
+    }
+    
+    Ok(output)
 }
 
 

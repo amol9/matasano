@@ -73,10 +73,12 @@ pub fn guess_key(ciphertext: &str, keylength: u8) -> Result<String, err::Error> 
     //let cipher_trans: Vec<Vec<char>> = etry!(util::transpose_vec::<char>(&ciphertext.chars().collect(), keylength as u32),
     //                                    "cipher text transposing error");
     let cipher_trans = etry!(util::transpose_str(&ciphertext, keylength as u32), "transpose error");
+    println!("cipher trans vec len = {}", cipher_trans.len());
 
     let mut key = String::new();
     for slice in cipher_trans {
         let keybyte: u8 = try!(obx::try_decipher(&slice)).key;
+        println!("key byte: {}", keybyte);
         key.push(ascii::u8_to_char(keybyte));
     }
     Ok(key)

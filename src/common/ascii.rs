@@ -3,7 +3,7 @@ use std::char;
 use common::err;
 
 
-pub fn raw_to_string(raw: &Vec<u8>) -> Result<String, err::Error> {
+pub fn raw_to_str(raw: &Vec<u8>) -> Result<String, err::Error> {
     let mut result = String::new();
 
     for byte in raw {
