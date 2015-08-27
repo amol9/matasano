@@ -3,7 +3,7 @@ use std::process;
 use std::convert::AsRef;
 
 extern crate matasano;
-use self::matasano::set1::{hextobase64, fixedxor, xorcipher, detectxorcipher, rptxorcipher, breakrptxor};
+use self::matasano::set1::{hextobase64, fixedxor, xorcipher, detectxorcipher, rptxorcipher, breakrptxor, aesdecrypt};
 
 
 fn main() {
@@ -23,6 +23,7 @@ fn main() {
         "detectxorcipher"   => detectxorcipher::interactive(),
         "rptxorcipher"      => rptxorcipher::interactive(),
         "breakrptxor"       => breakrptxor::interactive(),
+        "aesdecrypt"        => aesdecrypt::interactive(),
 		_		            => panic!("error")
 	};
 }
