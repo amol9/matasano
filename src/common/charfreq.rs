@@ -70,3 +70,13 @@ pub fn get_base_freq() -> Result<Vec<f32>, err::Error> {
 }
 
 
+pub fn distance_from_base(text: &str) -> Result<f32, err::Error> {
+    let base_freq = try!(get_base_freq());
+    let guess_freq = try!(compute_char_frequency(&text));
+    let mut dist_total = 0f32;
+
+    for i in 0..255 as usize {
+        dist_total += (base_freq[i] - guess_freq[i]).abs();
+    }
+    Ok(dist_total) 
+}

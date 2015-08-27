@@ -19,3 +19,11 @@ pub fn decrypt_raw(cipher: &Vec<u8>, key: &Vec<u8>) -> Result<Vec<u8>, err::Erro
     Ok(plain)
 }
 
+
+pub fn encrypt_raw(plain: &Vec<u8>, key: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
+    Ok(plain.iter().zip(key.iter().cycle()).map(|(a, b)| *a as u8 ^ *b as u8).collect())
+}
+
+
+
+

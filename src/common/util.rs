@@ -28,6 +28,32 @@ pub fn min_index<T: PartialOrd>(list: &Vec<T>) -> Option<usize> {
 }
 
 
+pub fn min_indices<T: PartialOrd>(list: &Vec<T>, count: usize) -> Option<Vec<usize>> {
+    let mut result = Vec::new();
+    //let result_contains = |idx| 
+
+    for c in 0 .. count {
+        let mut min_value = None;
+        let mut min_index: usize = 0;
+
+        let mut index: usize = 0;
+
+        for i in list {
+            if !result.iter().any(|x| *x == index) {
+                min_value = match min_value {
+                    Some(v) => if i < v { min_index = index; Some(i) } else { Some(v) },
+                    None    => Some(i)
+                  };
+            }
+            index += 1;
+        }
+
+        result.push(min_index);
+    }
+    Some(result)
+}
+
+
 macro_rules! input {
     ( $msg: expr, $str: expr ) => ( 
         print!($msg);
@@ -72,13 +98,11 @@ pub fn hamm_vec(a: &Vec<u8>, b: &Vec<u8>) -> Result<u32, err::Error> {
 
 
 pub fn transpose_vec<T: Clone>(input: &Vec<T>, length: u32) -> Result<Vec<Vec<T>>, err::Error> {
-    //let slice_count = f32::ceil(input.len() as f32 / length as f32) as usize; 
     let mut result: Vec<Vec<T>> = Vec::new();
     for _ in 0 .. length {
         result.push(Vec::new());
     }
 
-    println!("result len = {}", f32::ceil(input.len() as f32 / length as f32));
     let mut i: usize = 0;
     for v in input {
         result[(i as u32 % length) as usize].push(v.clone());

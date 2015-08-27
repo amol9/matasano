@@ -1,9 +1,10 @@
 extern crate matasano;
 use self::matasano::common::{util, ascii};
 use self::matasano::set1::breakrptxor as brx;
+use self::matasano::common::cipher::rpt_key_xor as rkx;
 
 
-macro_rules! match_res {
+macro_rules! m {
     ( $x : expr ) => ( match $x {
         Ok(v)   => v,
         Err(e)  => { println!("{}", e); assert!(false); return; }
@@ -11,34 +12,42 @@ macro_rules! match_res {
 }
 
 
-#[test]
-fn test_guess_key_length() {
-    let data_filepath = "data/6b.txt";
-    //let text = match_res!(util::read_file_to_str(&data_filepath));
-    //let keylength = match_res!(brx::guess_key_length(&text));
-
-    //println!("keylength = {}", keylength);
-}
-
-
-#[test]
-fn test_guess_key() {
-    let data_filepath = "data/6.txt";
-    //let text = match_res!(util::read_file_to_str(&data_filepath));
-    //let keylength = match_res!(brx::guess_key_length(&text));
-
-    //let key = match_res!(brx::guess_key(&text, keylength));
-
-    //println!("key = {}", match_res!(ascii::raw_to_str(&key)));
+macro_rules! mr {
+    ( $x : expr, $ret: expr ) => ( match $x {
+        Ok(v)   => v,
+        Err(e)  => { println!("{}", e); assert!(false); return $ret; }
+    } );
 }
 
 
 #[test]
 fn test_break_cipher() {
     let data_filepath = "data/6.txt";
-    let plaintext = match_res!(brx::break_cipher(&data_filepath));
+    let guess = m!(brx::break_cipher_from_file(&data_filepath));
 
-    println!("{}", plaintext);
+    println!("key: {}\n\n {}", guess.key, guess.text);
+    assert_eq!(guess.key, "Terminator X: Bring the noise");
 }
 
+
+macro_rules! s {
+	( $x : expr ) => ( String::from($x) );
+}
+
+
+//#[test]
+fn test_break() {
+    fn enc(input: &str, key: &str) -> Option<Vec<u8>> {
+        let plain = mr!(ascii::str_to_raw(&input), None);
+        let key = mr!(ascii::str_to_raw(&key), None);
+        let cipher = mr!(rkx::encrypt_raw(&plain, &key), None);
+        Some(cipher)
+    }
+
+    let text = m!(util::read_file_to_str(&s!("data/prob-6.txt")));
+    let cipher = enc(&text, &s!("key")).unwrap();
+    let guess = m!(brx::break_cipher(&cipher));
+
+    println!("key: {}\n\n {}", guess.key, guess.text);
+}
 

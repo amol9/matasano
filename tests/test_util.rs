@@ -12,6 +12,13 @@ fn test_min_index() {
 }
 
 
+#[test]
+fn test_min_indices() {
+    let v = vec![12, 2, 5, 56, 3];
+    assert_eq!(util::min_indices(&v, 2), Some(vec![1, 4]));
+}
+
+
 macro_rules! hammd {
     ( $x : expr, $y : expr )    => ( util::hamming_distance($x as u8, $y as u8); );
 }
