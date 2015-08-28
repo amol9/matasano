@@ -5,7 +5,7 @@ use self::matasano::common::cipher::rpt_key_xor as rkx;
 
 
 #[test]
-fn test_break_cipher() {
+fn test_cryptopals_case() {
     let data_filepath = "data/6.txt";
     let guess = m!(brx::break_cipher_from_file(&data_filepath));
 

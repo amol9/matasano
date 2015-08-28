@@ -4,7 +4,6 @@ use std::env;
 
 extern crate crypto;
 use self::crypto::{symmetriccipher, buffer, aes, blockmodes};
-use self::crypto::blockmodes::EcbDecryptor;
 use self::crypto::symmetriccipher::Decryptor;
 use self::crypto::buffer::{ReadBuffer, WriteBuffer, BufferResult};
 
@@ -28,7 +27,7 @@ pub fn aes_128_ecb_decrypt(input: &Vec<u8>, key: &Vec<u8>) -> Result<Vec<u8>, er
     let mut decryptr = aes::ecb_decryptor(
         aes::KeySize::KeySize128,
         key,
-        blockmodes::NoPadding);
+        blockmodes::PkcsPadding);
 
         let mut final_result = Vec::<u8>::new();
         let mut read_buffer = buffer::RefReadBuffer::new(input);

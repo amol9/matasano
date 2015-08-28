@@ -4,4 +4,5 @@ pub mod breakrptxor;
 pub mod fixedxor;
 pub mod rptxorcipher;
 pub mod xorcipher;
+pub mod aesdecrypt;
 
