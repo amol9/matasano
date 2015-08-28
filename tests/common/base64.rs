@@ -2,18 +2,6 @@ extern crate matasano;
 use self::matasano::common::{base64, hex, ascii};
 
 
-macro_rules! m {
-    ( $x : expr ) => ( match $x {
-        Ok(v)   => v,
-        Err(e)  => { println!("{}", e); assert!(false); return; }
-    } );
-}
-
-macro_rules! s {
-	( $x : expr ) => ( String::from($x) );
-}
-
-
 #[test]
 fn test_str_to_base64() {
     let i = s!("ab");

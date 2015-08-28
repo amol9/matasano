@@ -4,22 +4,6 @@ use self::matasano::set1::breakrptxor as brx;
 use self::matasano::common::cipher::rpt_key_xor as rkx;
 
 
-macro_rules! m {
-    ( $x : expr ) => ( match $x {
-        Ok(v)   => v,
-        Err(e)  => { println!("{}", e); assert!(false); return; }
-    } );
-}
-
-
-macro_rules! mr {
-    ( $x : expr, $ret: expr ) => ( match $x {
-        Ok(v)   => v,
-        Err(e)  => { println!("{}", e); assert!(false); return $ret; }
-    } );
-}
-
-
 #[test]
 fn test_break_cipher() {
     let data_filepath = "data/6.txt";
@@ -27,11 +11,6 @@ fn test_break_cipher() {
 
     println!("key: {}\n\n {}", guess.key, guess.text);
     assert_eq!(guess.key, "Terminator X: Bring the noise");
-}
-
-
-macro_rules! s {
-	( $x : expr ) => ( String::from($x) );
 }
 
 

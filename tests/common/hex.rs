@@ -46,11 +46,6 @@ macro_rules! rth_err {
 }
 
 
-macro_rules! s {
-	( $x : expr ) => ( String::from($x) );
-}
-
-
 #[test]
 fn test_hex_to_raw() {
 	htr!(&s!("00"), vec![0]);
