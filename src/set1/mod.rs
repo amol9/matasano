@@ -5,4 +5,5 @@ pub mod detectxorcipher;
 pub mod rptxorcipher;
 pub mod breakrptxor;
 pub mod aesdecrypt;
+pub mod detectaesecb;
 
