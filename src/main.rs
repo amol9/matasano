@@ -4,6 +4,7 @@ use std::convert::AsRef;
 
 extern crate matasano;
 use self::matasano::set1::{hextobase64, fixedxor, xorcipher, detectxorcipher, rptxorcipher, breakrptxor, aesdecrypt, detectaesecb};
+use self::matasano::set2::{pkcs7};
 
 
 fn main() {
@@ -25,6 +26,8 @@ fn main() {
         "breakrptxor"       => breakrptxor::interactive(),
         "aesdecrypt"        => aesdecrypt::interactive(),
         "detectaesecb"      => detectaesecb::interactive(),
+
+        "pkcs7"             => pkcs7::interactive(),
 		_		            => panic!("error")
 	};
 }
