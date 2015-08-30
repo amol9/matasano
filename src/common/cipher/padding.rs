@@ -3,7 +3,7 @@ use common::err;
 
 
 pub fn pkcs7(input: &mut String, blocksize: usize) -> Result<(), err::Error> {
-    ctry!(blocksize != 0, "invalid block size: 0");
+    ctry!(blocksize == 0, "invalid block size: 0");
 
     let pad: usize = (blocksize - (input.len() % blocksize)) % blocksize;
 
@@ -16,6 +16,60 @@ pub fn pkcs7(input: &mut String, blocksize: usize) -> Result<(), err::Error> {
     }
     Ok(())
 }
+
+
+pub trait Padding {
+    fn pad(block: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Error>;
+    fn unpad(block: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Error>;
+}
+
+
+struct Pkcs7 {
+}
+
+impl Padding for Pkcs7 {
+
+    //takes in raw and returns padded copy
+    pub fn pad(block: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Error> {
+        ctry!(blocksize == 0 || blocksize < block.len(), "invalid block size");
+
+        let pad: usize = (blocksize - (input.len() % blocksize)) % blocksize;
+        
+        if pad == 0 {
+            return Ok(vec!(block));
+        }
+
+        let result = vec!(block);
+        for _ in 0 .. pad {
+            result.push(pad as u8);
+        }
+        Ok(result)
+    }
+
+    pub fn unpad(block: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Error> {
+
+    }
+
+}
+
+
+struct NoPadding {
+}
+
+
+impl Padding for NoPadding {
+
+    //no padding, just returns the same block
+    pub fn pad(block: &Vec<u8>, blocksize: usize) -> Result<&Vec<u8>, err::Error> {
+        Ok(block)
+    }
+
+    pub fn unpad(block: &Vec<u8>, blocksize: usize) -> Result<&Vec<u8>, err::Error> {
+        Ok(block)
+    }
+
+}
+
 
 
 pub fn print_pkcs7(paddedtext: &str, blocksize: usize) -> Result<(), err::Error> {

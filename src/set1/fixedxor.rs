@@ -1,19 +1,7 @@
 use std::io;
 
-use common::{err, hex};
+use common::{err, hex, xor};
 
-
-pub fn xor_raw(x: Vec<u8>, y: Vec<u8>) -> Result<Vec<u8>, err::Error> {
-	let mut result: Vec<u8> = Vec::new();
-
-	let size: usize = x.len();
-
-	for i in 0..size {
-		result.push(x[i] ^ y[i]);
-	}
-	
-	Ok(result)
-}
 
 pub fn xor_hex(x: &str, y: &str) -> Result<String, err::Error> {
 	if (x.len() != y.len()) {
@@ -23,7 +11,7 @@ pub fn xor_hex(x: &str, y: &str) -> Result<String, err::Error> {
 	let rx: Vec<u8> =  try!(hex::hex_to_raw(x));
 	let ry: Vec<u8> =  try!(hex::hex_to_raw(y));
 
-	let rr: Vec<u8> = try!(xor_raw(rx, ry));
+	let rr: Vec<u8> = try!(xor::xor(&rx, &ry));
 
 	let result = try!(hex::raw_to_hex::<hex::lower>(&rr));
 	Ok(result)

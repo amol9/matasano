@@ -59,7 +59,7 @@ macro_rules! rtry {
 
 macro_rules! ctry {
     ( $cond : expr , $msg : expr )  => (
-        if !$cond {
+        if $cond {
            return mkerr!($msg);
         } );
 }

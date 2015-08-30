@@ -7,4 +7,5 @@ pub mod base64;
 pub mod ascii;
 pub mod cipher;
 pub mod charfreq;
+pub mod xor;
 
