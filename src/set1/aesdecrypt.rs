@@ -12,7 +12,7 @@ pub fn decrypt_from_file(filepath: &str, key: &str) -> Result<String, err::Error
     let cipherraw = try!(base64::base64_to_raw(&cipherclean));
 
     let keyraw = try!(ascii::str_to_raw(&key));
-    let plainraw = try!(aes::decrypt_ecb(&cipherraw, &keyraw));
+    let plainraw = try!(aes::decrypt(&cipherraw, &keyraw, &aes::ecb_128_pkcs7));
 
     let plaintext = try!(ascii::raw_to_str(&plainraw));
     Ok(plaintext)
