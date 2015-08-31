@@ -21,4 +21,6 @@ macro_rules! mr {
     } );
 }
 
-
+macro_rules! rn {
+    ( $x : expr ) => ( mr!( $x , None ) );
+}
