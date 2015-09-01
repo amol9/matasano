@@ -2,6 +2,7 @@
 name = "matasano"
 version = "0.0.1"
 dependencies = [
+ "rand 0.3.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "rust-crypto 0.2.31 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
