@@ -4,8 +4,17 @@ use std::io::prelude::*;
 extern crate rand;
 use self::rand::Rng;
 
-use common::err;
+use common::{err, challenge};
 use common::cipher::{aes, oracle, key};
+
+
+pub static info: challenge::Info = challenge::Info {
+    no:         11,
+    title:      "",
+    help:       "",
+    execute_fn: interactive
+};
+
 
 // fn: to generate random keys
 // fn: to generate random data of spec length
@@ -60,7 +69,7 @@ pub fn detect_aes_mode(sample_count: usize) -> Result<(usize, usize), err::Error
 }
 
 
-pub fn interactive() -> u32 {
+pub fn interactive() -> i32 {
     let mut s = String::new();
     input!("enter sample count: ", &mut s);
 

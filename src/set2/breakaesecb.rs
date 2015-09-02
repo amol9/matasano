@@ -1,10 +1,17 @@
 use std::env;
-use std::iter::FromIterator;
 use std::io;
 use std::io::Write;
 
-use common::{err, ascii, base64, util};
-use common::cipher::{aes, oracle, key, padding};
+use common::{err, ascii, base64, util, challenge};
+use common::cipher::{aes, oracle, key};
+
+
+pub static info: challenge::Info = challenge::Info {
+    no:         12,
+    title:      "Byte-at-a-time ECB decryption (Simple)",
+    help:       "param1: path to base 64 encoded plain text file",
+    execute_fn: interactive
+};
 
 
 const max_blocksize: usize = 32;
@@ -26,13 +33,6 @@ impl CipherBox {
         })
     }
 
-    fn gen(&self, prefix: &str) -> Result<Vec<u8>, err::Error> {
-        let mut final_input = try!(ascii::str_to_raw(&prefix));
-        final_input.extend(&self.data);
-
-        aes::encrypt(&final_input, &self.key, &self.mode)
-    }
-
     fn encrypt(&self, prefix: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
         let mut input = prefix.clone();
         input.extend(&self.data);
@@ -40,9 +40,11 @@ impl CipherBox {
     }
 }
 
+
 macro_rules! strn {
     ( $c : expr, $n : expr ) => ( String::from_iter( ( 0 .. $n ).map( |_| $c as char).collect::<Vec<char>>() ) );
 }
+
 
 macro_rules! printr {
     ( $x : expr ) => ( try!(ascii::raw_to_str($x)) );
@@ -50,9 +52,9 @@ macro_rules! printr {
 
 
 pub fn break_aes_ecb(cipherbox: &CipherBox) -> Result<String, err::Error> {
-    let (blocksize, plaintext_size) = try!(detect_block_size(&cipherbox, max_blocksize));
+    let (blocksize, plaintext_size) = try!(detect_blocksize_plainsize(&cipherbox, max_blocksize));
 
-    ctry!(!try!(oracle::detect_aes_ecb(&try!(cipherbox.gen(&strn!('A', 2 * blocksize))), blocksize)),
+    ctry!(!try!(oracle::detect_aes_ecb(&try!(cipherbox.encrypt(&vec![65 as u8; 2 * blocksize])), blocksize)),
         "cipher is not aes ecb, can't break with this module");
 
     let max_u8 = 126;
@@ -122,7 +124,7 @@ pub fn make_dict(prefix: &Vec<u8>, cipherbox: &CipherBox, max_u8: u8) -> Result<
 }
 
 
-pub fn detect_block_size(cipherbox: &CipherBox, max: usize) -> Result<(usize, usize), err::Error> {
+pub fn detect_blocksize_plainsize(cipherbox: &CipherBox, max: usize) -> Result<(usize, usize), err::Error> {
     let len1 = try!(cipherbox.encrypt(&Vec::<u8>::new())).len();
 
     let mut prefix = vec![65 as u8];
@@ -151,13 +153,13 @@ pub fn init_cipherbox(plaintext_base64: &str) -> Result<CipherBox, err::Error> {
 }
 
 
-pub fn interactive() -> u32 {
+pub fn interactive() -> i32 {
     let input_filepath = match env::args().nth(2) {
         Some(v) => v,
         None    => { println!("please specify input data (base64 encoded) filepath"); return 1; }
     };
 
-    let cipherbox = rtry!(init_cipherbox(&input_filepath), 1);
+    let cipherbox = rtry!(init_cipherbox_from_file(&input_filepath), 1);
     let plaintext = rtry!(break_aes_ecb(&cipherbox), 1);
 
     println!("{}", plaintext);

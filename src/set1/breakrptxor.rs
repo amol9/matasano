@@ -3,9 +3,17 @@ use std::ops;
 use std::slice;
 use std::clone;
 
-use common::{err, util, ascii, base64, charfreq};
+use common::{err, util, ascii, base64, charfreq, challenge};
 use common::cipher::one_byte_xor as obx;
 use common::cipher::rpt_key_xor as rkx;
+
+
+pub static info: challenge::Info = challenge::Info {
+    no:         6,
+    title:      "",
+    help:       "",
+    execute_fn: interactive
+};
 
 
 const KEYLENGTH_RANGE: ops::Range<usize> = ops::Range {start: 1, end: 40};
@@ -134,7 +142,7 @@ pub fn guess_key(cipherraw: &Vec<u8>, keylength: usize) -> Result<Vec<u8>, err::
 }
 
 
-pub fn interactive() -> u32 {
+pub fn interactive() -> i32 {
     let input_filepath = match env::args().nth(2) {
         Some(v) => v,
         None    => { println!("please specify input data filepath"); return 1; }

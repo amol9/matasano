@@ -1,6 +1,14 @@
 use std::io;
 
-use common::{err, hex, xor};
+use common::{err, hex, xor, challenge};
+
+
+pub static info: challenge::Info = challenge::Info {
+    no:         4,
+    title:      "",
+    help:       "",
+    execute_fn: interactive
+};
 
 
 pub fn xor_hex(x: &str, y: &str) -> Result<String, err::Error> {
@@ -18,7 +26,7 @@ pub fn xor_hex(x: &str, y: &str) -> Result<String, err::Error> {
 }
 
 
-pub fn interactive() -> u32 {
+pub fn interactive() -> i32 {
 	println!("Fixed XOR (for hex numbers of equal length)");
 
 	let mut x: String = String::new();

@@ -2,11 +2,16 @@ use std::io;
 use std::io::prelude::*;
 use std::env;
 
-use common::{err, util, ascii, base64};
+use common::{err, util, ascii, base64, challenge};
 use common::cipher::aes;
 
-const challenge_no: u8 = 10;
-const challenge_title: &'static str = "Implement CBC mode";
+
+pub static info: challenge::Info = challenge::Info {
+    no:         10,
+    title:      "Implement CBC mode",
+    help:       "",
+    execute_fn: interactive
+};
 
 
 pub fn decrypt_from_file(filepath: &str, key: &str) -> Result<String, err::Error> {
@@ -22,7 +27,7 @@ pub fn decrypt_from_file(filepath: &str, key: &str) -> Result<String, err::Error
 }
 
 
-pub fn interactive() -> u32 {
+pub fn interactive() -> i32 {
     let input_filepath = match env::args().nth(2) {
         Some(v) => v,
         None    => { println!("please specify input data filepath"); return 1; }

@@ -3,35 +3,34 @@ use std::process;
 use std::convert::AsRef;
 
 extern crate matasano;
-use self::matasano::set1::{hextobase64, fixedxor, xorcipher, detectxorcipher, rptxorcipher, breakrptxor, aesdecrypt, detectaesecb};
-use self::matasano::set2::{pkcs7, aescbc, aesoracle, breakaesecb};
+use self::matasano::set1;
+use self::matasano::set2;
+use self::matasano::common::challenge;
 
 
 fn main() {
-	
-	let problem = match env::args().nth(1) {
-		Some(v)	=> v,
+    let mut all_challenges = set1::challenges.iter().chain(set2::challenges.iter());
+
+	let problem_no = match env::args().nth(1) {
+		Some(v)	=> match v.parse::<u32>() {
+            Ok(v)  => v,
+            Err(e) => { println!("{}", e); process::exit(1); }
+        },
+
 		None	=> {
-				println!("please specify a problem to try..");
+				println!("please specify a problem number to try");
+				println!("or, help to list all sets");
 				process::exit(1);
 			   }
 	};
 
-	match problem.as_ref() {
-		"hextobase64"	    => hextobase64::interactive(),
-		"fixedxor"	        => fixedxor::interactive(),
-        "xorcipher"         => xorcipher::interactive(),
-        "detectxorcipher"   => detectxorcipher::interactive(),
-        "rptxorcipher"      => rptxorcipher::interactive(),
-        "breakrptxor"       => breakrptxor::interactive(),
-        "aesdecrypt"        => aesdecrypt::interactive(),
-        "detectaesecb"      => detectaesecb::interactive(),
+    let challenge = match all_challenges.find(|ch| ch.no == problem_no) {
+        Some(v) => v,
+        None    => { println!("no such challenge"); process::exit(1); }
+    };
 
-        "pkcs7"             => pkcs7::interactive(),
-        "aescbc"            => aescbc::interactive(),
-        "aesoracle"         => aesoracle::interactive(),
-        "breakaesecb"       => breakaesecb::interactive(),
+    let r: i32 = (challenge.execute_fn)();
 
-		_		            => panic!("error")
-	};
+    process::exit(r);
 }
+

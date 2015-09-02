@@ -3,8 +3,16 @@ use std::fs;
 use std::env;
 use std::f32;
 
-use common::{err, util};
+use common::{err, util, challenge};
 use common::cipher::one_byte_xor as obx;
+
+
+pub static info: challenge::Info = challenge::Info {
+    no:         5,
+    title:      "",
+    help:       "",
+    execute_fn: interactive
+};
 
 
 pub fn read_input_file(filepath: &str) -> Result<Vec<String>, err::Error> {
@@ -33,7 +41,7 @@ pub fn detect_xor_cipher(input: &Vec<String>) -> Result<String, err::Error> {
 }
 
 
-pub fn interactive() -> u32 {
+pub fn interactive() -> i32 {
     let input_filepath = match env::args().nth(2) {
         Some(v) => v,
         None    => { println!("please specify input data filepath"); return 1; }

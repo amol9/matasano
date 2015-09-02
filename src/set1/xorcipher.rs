@@ -1,11 +1,19 @@
 use std::env;
 use std::io;
 
-use common::{err, charfreq};
+use common::{err, charfreq, challenge};
 use common::cipher::one_byte_xor as obx;
 
 
-pub fn i_generate_base_frequency_file() -> u32 {
+pub static info: challenge::Info = challenge::Info {
+    no:         2,
+    title:      "",
+    help:       "",
+    execute_fn: interactive
+};
+
+
+pub fn i_generate_base_frequency_file() -> i32 {
     let sample_filepath = match env::args().nth(3) {
         Some(v) => v,
         None    => { println!("please provide the path to sample data file"); return 1; }
@@ -18,7 +26,7 @@ pub fn i_generate_base_frequency_file() -> u32 {
 }
 
 
-pub fn i_decipher() -> u32 {
+pub fn i_decipher() -> i32 {
     println!("enter the hex string to be deciphered: ");
     let mut input = String::new();
     io::stdin().read_line(&mut input);
@@ -30,7 +38,7 @@ pub fn i_decipher() -> u32 {
 }
 
 
-pub fn interactive() -> u32 {
+pub fn interactive() -> i32 {
     match env::args().nth(2) {
         Some(v) => match v.as_ref() {
                         "genbase"   => i_generate_base_frequency_file(),

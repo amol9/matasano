@@ -9,3 +9,5 @@ pub mod cipher;
 pub mod charfreq;
 pub mod xor;
 
+pub mod challenge;
+

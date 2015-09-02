@@ -2,10 +2,18 @@ use std::io;
 use std::io::prelude::*;
 
 use common::cipher::rpt_key_xor as rkx;
-use common::util;
+use common::{util, challenge};
 
 
-pub fn interactive() -> u32 {
+pub static info: challenge::Info = challenge::Info {
+    no:         1,
+    title:      "",
+    help:       "",
+    execute_fn: interactive
+};
+
+
+pub fn interactive() -> i32 {
     let mut plain = String::new();
     input!("enter plain text: ", &mut plain);
 

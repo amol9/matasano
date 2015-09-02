@@ -1,10 +1,18 @@
 use std::char;
 use std::io;
 
-use common::base64;
+use common::{base64, challenge};
 
 
-pub fn interactive() -> u32 {
+pub static info: challenge::Info = challenge::Info {
+    no:         1,
+    title:      "",
+    help:       "",
+    execute_fn: interactive
+};
+
+
+pub fn interactive() -> i32 {
 	let mut input = String::new();
 
 	println!("enter a hex number: ");

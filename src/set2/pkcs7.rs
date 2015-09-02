@@ -2,9 +2,19 @@ use std::io;
 use std::io::prelude::*;
 
 use common::cipher::padding;
+use common::challenge;
 
 
-pub fn interactive() -> u32 {
+pub static info: challenge::Info = challenge::Info {
+    no:         9,
+    title:      "",
+    help:       "",
+    execute_fn: interactive
+};
+
+
+
+pub fn interactive() -> i32 {
     let mut text = String::new();
     input!("enter text: ", &mut text);
 

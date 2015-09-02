@@ -1,7 +1,15 @@
 use std::env;
 
-use common::{err, util, hex};
+use common::{err, util, hex, challenge};
 use common::cipher::oracle;
+
+
+pub static info: challenge::Info = challenge::Info {
+    no:         1,
+    title:      "",
+    help:       "",
+    execute_fn: interactive
+};
 
 
 const BLOCK_SIZE: usize = 16;
@@ -32,7 +40,7 @@ pub fn detect_from_list(filepath: &str) -> Result<Vec<String>, err::Error> {
 }
 
 
-pub fn interactive() -> u32 {
+pub fn interactive() -> i32 {
     let input_filepath = match env::args().nth(2) {
         Some(v) => v,
         None    => { println!("please specify input data filepath"); return 1; }
