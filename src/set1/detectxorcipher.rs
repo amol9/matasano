@@ -8,9 +8,9 @@ use common::cipher::one_byte_xor as obx;
 
 
 pub static info: challenge::Info = challenge::Info {
-    no:         5,
-    title:      "",
-    help:       "",
+    no:         4,
+    title:      "Detect single-character XOR",
+    help:       "param1: path to file with a list of data items in hex form",
     execute_fn: interactive
 };
 
@@ -41,15 +41,15 @@ pub fn detect_xor_cipher(input: &Vec<String>) -> Result<String, err::Error> {
 }
 
 
-pub fn interactive() -> i32 {
+pub fn interactive() -> err::ExitCode {
     let input_filepath = match env::args().nth(2) {
         Some(v) => v,
-        None    => { println!("please specify input data filepath"); return 1; }
+        None    => { println!("please specify input data filepath"); return exit_err!(); }
     };
 
     let input = rtry!(read_input_file(&input_filepath), 1);
     let output = rtry!(detect_xor_cipher(&input), 1);
     println!("cipher string: {}", output);
-    0
+    exit_ok!()
 }
 

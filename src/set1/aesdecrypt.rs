@@ -8,8 +8,8 @@ use common::cipher::aes;
 
 pub static info: challenge::Info = challenge::Info {
     no:         7,
-    title:      "",
-    help:       "",
+    title:      "AES in ECB mode",
+    help:       "param1: path to aes ecb encrypted file in base64 form",
     execute_fn: interactive
 };
 
@@ -27,10 +27,10 @@ pub fn decrypt_from_file(filepath: &str, key: &str) -> Result<String, err::Error
 }
 
 
-pub fn interactive() -> i32 {
+pub fn interactive() -> err::ExitCode {
     let input_filepath = match env::args().nth(2) {
         Some(v) => v,
-        None    => { println!("please specify input data filepath"); return 1; }
+        None    => { println!("please specify input data filepath"); return exit_err!(); }
     };
 
     let mut key = String::new();
@@ -38,6 +38,6 @@ pub fn interactive() -> i32 {
 
     let plaintext = rtry!(decrypt_from_file(&input_filepath, &key.trim()), 1);
     println!("{}", plaintext);
-    0
+    exit_ok!()
 }
 

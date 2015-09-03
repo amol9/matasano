@@ -65,7 +65,20 @@ macro_rules! ctry {
 }
 
 
-pub enum ExitCode {
-	Success = 0,
-	Error
+//pub enum ExitCode {
+//	Success = 0,
+//	Error
+//}
+
+pub type ExitCode = i32;
+
+
+macro_rules! exit_ok {
+    ( ) => ( 0 );
 }
+
+
+macro_rules! exit_err {
+    ( ) => ( 1 );
+}
+

@@ -153,16 +153,16 @@ pub fn init_cipherbox(plaintext_base64: &str) -> Result<CipherBox, err::Error> {
 }
 
 
-pub fn interactive() -> i32 {
+pub fn interactive() -> err::ExitCode {
     let input_filepath = match env::args().nth(2) {
         Some(v) => v,
-        None    => { println!("please specify input data (base64 encoded) filepath"); return 1; }
+        None    => { println!("please specify input data (base64 encoded) filepath"); return exit_err!(); }
     };
 
-    let cipherbox = rtry!(init_cipherbox_from_file(&input_filepath), 1);
-    let plaintext = rtry!(break_aes_ecb(&cipherbox), 1);
+    let cipherbox = rtry!(init_cipherbox_from_file(&input_filepath), exit_err!());
+    let plaintext = rtry!(break_aes_ecb(&cipherbox), exit_err!());
 
     println!("{}", plaintext);
-    0
+    exit_ok!()
 }
 

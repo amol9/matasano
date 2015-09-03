@@ -2,19 +2,19 @@ use std::io;
 use std::io::prelude::*;
 
 use common::cipher::padding;
-use common::challenge;
+use common::{challenge, err};
 
 
 pub static info: challenge::Info = challenge::Info {
     no:         9,
-    title:      "",
+    title:      "Implement PKCS#7 padding",
     help:       "",
     execute_fn: interactive
 };
 
 
 
-pub fn interactive() -> i32 {
+pub fn interactive() -> err::ExitCode {
     let mut text = String::new();
     input!("enter text: ", &mut text);
 
@@ -23,12 +23,12 @@ pub fn interactive() -> i32 {
 
     let blocksize = match bsize.trim().parse::<usize>() {
         Ok(v)   => v,
-        Err(e)  => { println!("{}", e); return 1; }
+        Err(e)  => { println!("{}", e); return exit_err!(); }
     };
 
     text = String::from(text.trim());
-    rtry!(padding::pkcs7(&mut text, blocksize), 1);
+    rtry!(padding::pkcs7(&mut text, blocksize), exit_err!());
 
     padding::print_pkcs7(&text, blocksize);
-    0
+    exit_ok!()
 }

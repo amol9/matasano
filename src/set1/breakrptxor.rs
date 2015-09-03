@@ -10,8 +10,8 @@ use common::cipher::rpt_key_xor as rkx;
 
 pub static info: challenge::Info = challenge::Info {
     no:         6,
-    title:      "",
-    help:       "",
+    title:      "Break repeating-key XOR",
+    help:       "param1: path to file containing repeating key xor encrypted data in base64 form",
     execute_fn: interactive
 };
 
@@ -142,14 +142,14 @@ pub fn guess_key(cipherraw: &Vec<u8>, keylength: usize) -> Result<Vec<u8>, err::
 }
 
 
-pub fn interactive() -> i32 {
+pub fn interactive() -> err::ExitCode {
     let input_filepath = match env::args().nth(2) {
         Some(v) => v,
-        None    => { println!("please specify input data filepath"); return 1; }
+        None    => { println!("please specify input data filepath"); return exit_err!(); }
     };
 
     let guess = rtry!(break_cipher_from_file(&input_filepath), 1);
     println!("\nkey: {}\n\n{}", guess.key, guess.text);
-    0
+    exit_ok!()
 }
 

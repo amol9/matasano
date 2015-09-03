@@ -5,9 +5,9 @@ use common::cipher::oracle;
 
 
 pub static info: challenge::Info = challenge::Info {
-    no:         1,
-    title:      "",
-    help:       "",
+    no:         8,
+    title:      "Detect AES in ECB mode",
+    help:       "param1: path to the file containing data items in hex form",
     execute_fn: interactive
 };
 
@@ -40,16 +40,16 @@ pub fn detect_from_list(filepath: &str) -> Result<Vec<String>, err::Error> {
 }
 
 
-pub fn interactive() -> i32 {
+pub fn interactive() -> err::ExitCode {
     let input_filepath = match env::args().nth(2) {
         Some(v) => v,
-        None    => { println!("please specify input data filepath"); return 1; }
+        None    => { println!("please specify input data filepath"); return exit_err!(); }
     };
 
     let result = rtry!(detect_from_list(&input_filepath), 1);
     for r in result {
         println!("{}\n", r);
     }
-    0
+    exit_ok!()
 }
 

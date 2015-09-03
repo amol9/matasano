@@ -9,7 +9,7 @@ use common::cipher::aes;
 pub static info: challenge::Info = challenge::Info {
     no:         10,
     title:      "Implement CBC mode",
-    help:       "",
+    help:       "param1: path to file with aes cbc encrypted data in base64 form",
     execute_fn: interactive
 };
 
@@ -27,17 +27,17 @@ pub fn decrypt_from_file(filepath: &str, key: &str) -> Result<String, err::Error
 }
 
 
-pub fn interactive() -> i32 {
+pub fn interactive() -> err::ExitCode {
     let input_filepath = match env::args().nth(2) {
         Some(v) => v,
-        None    => { println!("please specify input data filepath"); return 1; }
+        None    => { println!("please specify input data filepath"); return exit_err!(); }
     };
 
     let mut key = String::new();
     input!("enter key: ", &mut key);
 
-    let plaintext = rtry!(decrypt_from_file(&input_filepath, &key.trim()), 1);
+    let plaintext = rtry!(decrypt_from_file(&input_filepath, &key.trim()), exit_err!());
     println!("{}", plaintext);
-    0
+    exit_ok!()
 }
 

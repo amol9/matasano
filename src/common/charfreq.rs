@@ -2,6 +2,7 @@ use std::fs::File;
 use std::io::prelude::{Read, Write};
 use std::f32;
 use std::fs;
+use std::env;
 
 use common::{err, ascii};
 
@@ -80,3 +81,18 @@ pub fn distance_from_base(text: &str) -> Result<f32, err::Error> {
     }
     Ok(dist_total) 
 }
+
+
+pub fn i_generate_base_frequency_file() -> err::ExitCode {
+    let sample_filepath = match env::args().nth(2) {
+        Some(v) => v,
+        None    => { println!("please provide the path to sample data file"); return exit_err!(); }
+    };
+
+    match generate_base_frequency_file(&sample_filepath) {
+        Ok(_)   => exit_ok!(),
+        Err(e)  => { println!("{}", e); exit_err!() }
+    }
+}
+
+

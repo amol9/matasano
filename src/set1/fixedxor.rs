@@ -1,11 +1,12 @@
 use std::io;
+use std::io::Write;
 
 use common::{err, hex, xor, challenge};
 
 
 pub static info: challenge::Info = challenge::Info {
-    no:         4,
-    title:      "",
+    no:         2,
+    title:      "Fixed XOR",
     help:       "",
     execute_fn: interactive
 };
@@ -26,29 +27,16 @@ pub fn xor_hex(x: &str, y: &str) -> Result<String, err::Error> {
 }
 
 
-pub fn interactive() -> i32 {
-	println!("Fixed XOR (for hex numbers of equal length)");
-
+pub fn interactive() -> err::ExitCode {
 	let mut x: String = String::new();
-
-	println!("enter first hex number: ");
-	io::stdin().read_line(&mut x);
+	input!("enter first hex number: ", &mut x);
 
 	let mut y: String = String::new();
-
-	println!("enter second hex number: ");
-	io::stdin().read_line(&mut y);
-
-	let result = String::new();
+	input!("enter second hex number: ", &mut y);
 
 	match xor_hex(&x.trim(), &y.trim()) {
-		Ok(v)	=> {
-				println!("{}", v);
-				0
-			   },
-		Err(e)	=> {
-				println!("{}", e);
-				1
-			   }
+		Ok(v)	=> { println!("xor result: {}", v); exit_ok!() },
+		Err(e)	=> { println!("{}", e); exit_err!() }
 	}
 }
+

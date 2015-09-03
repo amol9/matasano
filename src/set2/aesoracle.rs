@@ -10,16 +10,10 @@ use common::cipher::{aes, oracle, key};
 
 pub static info: challenge::Info = challenge::Info {
     no:         11,
-    title:      "",
+    title:      "An ECB/CBC detection oracle",
     help:       "",
     execute_fn: interactive
 };
-
-
-// fn: to generate random keys
-// fn: to generate random data of spec length
-// move: detect function to common
-// loop: a spec number of samples
 
 
 pub fn gen_cipher(input: &Vec<u8>, mode: &aes::Mode) -> Result<Vec<u8>, err::Error> {
@@ -69,14 +63,14 @@ pub fn detect_aes_mode(sample_count: usize) -> Result<(usize, usize), err::Error
 }
 
 
-pub fn interactive() -> i32 {
+pub fn interactive() -> err::ExitCode {
     let mut s = String::new();
     input!("enter sample count: ", &mut s);
 
-    let sample_count = rtry!(s.trim().parse::<usize>(), 1);
-    let (success, failure) = rtry!(detect_aes_mode(sample_count), 1);
+    let sample_count = rtry!(s.trim().parse::<usize>(), exit_err!());
+    let (success, failure) = rtry!(detect_aes_mode(sample_count), exit_err!());
 
     println!("tried {} samples: success: {}, failure: {}", sample_count, success, failure);
-    0
+    exit_ok!()
 }
 
