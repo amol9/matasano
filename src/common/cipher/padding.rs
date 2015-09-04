@@ -92,6 +92,8 @@ pub fn pkcs7_detect(block: &Vec<u8>, blocksize: usize) -> Result<usize, err::Err
                 return Ok(0);
             }
         }           
+    } else {
+        return Ok(0);
     }
     Ok(padsize)
 }

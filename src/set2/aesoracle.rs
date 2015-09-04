@@ -47,10 +47,8 @@ pub fn detect_aes_mode(sample_count: usize) -> Result<(usize, usize), err::Error
         let d_mode: aes::Mode;
         if try!(oracle::detect_aes_ecb(&cipher, mode.blocksize)) {
             d_mode = aes::ecb_128_pkcs7;
-            println!("ecb");
         } else {
             d_mode = aes::cbc_128_pkcs7;
-            println!("cbc");
         }
         
         if d_mode.blockmode == mode.blockmode {

@@ -18,7 +18,7 @@ pub fn interactive() -> i32 {
 	input!("enter a hex number: ", &mut hex);
 
 	match base64::hex_to_base64(&hex.trim()) {
-		Ok(v)	=> { println!("{}", v); exit_ok!() }
+		Ok(v)	=> { println!("base64: {}", v); exit_ok!() }
 		Err(e)	=> { println!("{}", e); exit_err!() }
 	}
 }

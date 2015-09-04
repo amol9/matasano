@@ -162,7 +162,7 @@ pub fn interactive() -> err::ExitCode {
     let cipherbox = rtry!(init_cipherbox_from_file(&input_filepath), exit_err!());
     let plaintext = rtry!(break_aes_ecb(&cipherbox), exit_err!());
 
-    println!("{}", plaintext);
+    //println!("{}", plaintext);
     exit_ok!()
 }
 

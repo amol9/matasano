@@ -13,7 +13,7 @@ fn test_cryptopals_case() {
 
     let exp_suffix: &str = "Play that funky music \n";
 
-    //assert!(plain.starts_with(exp_prefix));
+    //assert!(plain.starts_with(exp_prefix));   first block cannot be decrypted due to an unknown IV
     assert!(plain.ends_with(exp_suffix));
 
     println!("{}", plain);
