@@ -8,6 +8,7 @@ pub mod ascii;
 pub mod cipher;
 pub mod charfreq;
 pub mod xor;
+pub mod url;
 
 pub mod challenge;
 
