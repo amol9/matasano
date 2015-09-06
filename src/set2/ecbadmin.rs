@@ -1,5 +1,3 @@
-use std::io;
-use std::io::Write;
 
 use common::{err, ascii, base64, util, challenge, url};
 use common::cipher::{aes, key, padding};
@@ -35,9 +33,9 @@ impl User {
 
     fn encode(&self) -> Result<String, err::Error> {
         Ok(try!(url::encode(&vec![
-            ("email", &self.email),
-            ("uid", &format!("{}", self.uid)),
-            ("role", &self.role)])))
+            ("email",   &self.email),
+            ("uid",     &format!("{}", self.uid)),
+            ("role",    &self.role)])))
     }
 
 
@@ -69,18 +67,20 @@ impl AuthBox {
 
     fn authenticate(&self, cipher: &Vec<u8>) -> Result<String, err::Error> {
         let plain_raw = try!(aes::decrypt(&cipher, &self.key, &self.mode));
-        let plain_str = try!(ascii::raw_to_str(&plain_raw));
+        let plain_str = rts!(&plain_raw);
         let user = try!(User::decode(&plain_str));
+
         Ok(user.role)
     }
 
 
     fn profile_for(&self, email: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
-        let email_str = try!(ascii::raw_to_str(&email));
+        let email_str = rts!(&email);
 
         let user = User::new(&email_str, 10, "user");
         let encoded = try!(user.encode());
-        let enc_raw = try!(ascii::str_to_raw(&encoded));
+        let enc_raw = raw!(&encoded);
+
         Ok(try!(aes::encrypt(&enc_raw, &self.key, &self.mode)))
     }
 }
@@ -89,52 +89,45 @@ impl AuthBox {
 pub fn auth_as_admin(authbox: &AuthBox) -> Result<bool, err::Error> {
     let blocksize = try!(detect_blocksize(&authbox, max_blocksize));
 
+    //step1: get cipher block for "admin+padding"
+
     let mut email_name = String::from("a");
     let email_domain = "b.co";
 
-    let email_padsize = blocksize % ("email=".len() + email_name.len() + 1 + email_domain.len());
-    for _ in 0 .. email_padsize {
-        email_name.push('a');
-    }
+    let len_email = "email=".len() + email_name.len() + 1 + email_domain.len();
+    let email_padsize = (blocksize - (len_email % blocksize)) % blocksize;
+    email_name.push_str(strn!('a', email_padsize).as_ref());
 
-    let mut email = String::from(email_name);
-    email.push('@');
-    email.push_str(&email_domain);
+    let email = strjoin!(&email_name, "@", &email_domain);                              //email that ends on a block boundary
 
-    //let email_raw = try!(ascii::str_to_raw(&email));
-    let mut suffix = "admin";
-    let suffix_raw = try!(ascii::str_to_raw(&suffix));
-    let padded_suffix_raw = try!((padding::Pkcs7.unpad_fn)(&suffix_raw, blocksize));
-    let padded_suffix = try!(ascii::raw_to_str(&padded_suffix_raw));
+    let padded_suffix_raw = try!((padding::Pkcs7.pad_fn)(&raw!("admin"), blocksize));   //"admin+padding"
+    let mut email_raw = raw!(&email);
+    email_raw.extend(&padded_suffix_raw);                                               //email + "admin+padding"
 
-    email.push_str(&padded_suffix);
+    let token = try!(authbox.profile_for(&email_raw));
+    let admin_block = token.chunks(blocksize).nth(1).unwrap().to_vec();                 //extract cipher block for "admin+padding"
 
-    let token = try!(authbox.profile_for(&raw!(&email)));
-    let admin_block = token.chunks(blocksize).nth(1).unwrap();
-
+    //step2: get cipher block(s) for encoded string upto role=
 
     email_name = String::from("a");
 
-    let email_padsize = blocksize % ("email=".len() + email_name.len() + 1 + email_domain.len() + "&uid=10&role=".len());
-    for _ in 0 .. email_padsize {
-        email_name.push('a');
-    }
+    let len_upto_role = ("email=".len() + email_name.len() + 1 + email_domain.len() + "&uid=10&role=".len());
+    let email_padsize = (blocksize - (len_upto_role % blocksize)) % blocksize;
 
-    email = String::from(email_name);
-    email.push('@');
-    email.push_str(&email_domain);
+    email_name.push_str(strn!('a', email_padsize).as_ref());
+                                                                                                
+    let token2 = try!(authbox.profile_for(&raw!(strjoin!(&email_name, "@", &email_domain).as_ref())));
 
-    let mut new_token_prefix = String::from("email=");
-    new_token_prefix.push_str(&email);
-    new_token_prefix.push_str("&uid=10&role=");
+    let mut new_token = token2.chunks(len_upto_role + email_padsize).next().unwrap().to_vec();  //get token upto role=
 
-    let mut new_token_raw = try!(ascii::str_to_raw(&new_token_prefix));
-    new_token_raw.extend(admin_block);
+    //step3: append the "admin+padding" cipher block from step1 to partial token from step 2
 
-    //let new_token = try!(ascii::raw_to_str(&new_token_raw));
+    new_token.extend(&admin_block);
 
+    //step4: get the power !!
 
-    let role = try!(authbox.authenticate(&new_token_raw));
+    let role = try!(authbox.authenticate(&new_token));
+
     match role.as_ref() {
         "admin" => { println!("admin access granted !!"); Ok(true) },
         _       => { println!("admin access denied :("); Ok(false) }
@@ -144,7 +137,7 @@ pub fn auth_as_admin(authbox: &AuthBox) -> Result<bool, err::Error> {
 
 fn detect_blocksize(authbox: &AuthBox, max: usize) -> Result<usize, err::Error> {
     let mut email_name = String::from("a");
-    let email_domain = "b.c";
+    let email_domain = "b.co";
 
     let len1 = try!(authbox.profile_for(&raw!(strjoin!(&email_name, &email_domain).as_ref()))).len();
 
@@ -165,9 +158,6 @@ pub fn init_authbox() -> Result<AuthBox, err::Error> {
 
 
 pub fn interactive() -> err::ExitCode {
-    //let mut role = String::new();
-    //input!("enter role to break into: ", &mut role);
-
     let authbox = rtry!(init_authbox(), exit_err!());
     rtry!(auth_as_admin(&authbox), exit_err!());
     exit_ok!()

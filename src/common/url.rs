@@ -24,10 +24,13 @@ pub fn decode(param_string: &str) -> Result<Vec<(String, String)>, err::Error> {
 
     for pair in param_string.split('&') {
         let mut nv = &mut pair.split('=');
-        ctry!(nv.count() != 2, format!("invalid name-value pair: {}", pair));
+        let name = nv.next();
+        let value = nv.next();
 
-        result.push((String::from(nv.next().unwrap()), 
-                     String::from(nv.next().unwrap())));
+        ctry!(name == None || value == None, format!("invalid name-value pair: {}", pair));
+
+        result.push((String::from(name.unwrap()), 
+                     String::from(value.unwrap())));
     }
     Ok(result)
 }

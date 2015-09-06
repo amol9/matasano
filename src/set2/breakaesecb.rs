@@ -41,11 +41,6 @@ impl CipherBox {
 }
 
 
-macro_rules! strn {
-    ( $c : expr, $n : expr ) => ( String::from_iter( ( 0 .. $n ).map( |_| $c as char).collect::<Vec<char>>() ) );
-}
-
-
 macro_rules! printr {
     ( $x : expr ) => ( try!(ascii::raw_to_str($x)) );
 }

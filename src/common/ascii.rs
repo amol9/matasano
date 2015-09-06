@@ -62,3 +62,16 @@ macro_rules! strjoin {
         } );
 }
 
+
+macro_rules! strn {
+    ( $c : expr, $n : expr ) => ( 
+        { 
+            let mut s = String::new();
+            for _ in 0 .. $n {
+                s.push($c);
+            }
+            s
+        } );
+}
+
+
