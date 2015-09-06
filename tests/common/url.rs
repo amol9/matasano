@@ -10,7 +10,7 @@ fn test_encode() {
 
 #[test]
 fn test_decode() {
-    assert_eq!(m!(url::decode("a=test&b=10&c=something")), vec![("a", "test"), ("b", "10"), ("c", "something")]);
+    assert_eq!(m!(url::decode("a=test&b=10&c=something")), vec![(s!("a"), s!("test")), (s!("b"), s!("10")), (s!("c"), s!("something"))]);
 }
 
 

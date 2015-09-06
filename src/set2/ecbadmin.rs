@@ -1,8 +1,11 @@
 use std::io;
 use std::io::Write;
 
-use common::{err, ascii, base64, util, challenge};
-use common::cipher::{aes, oracle, key};
+use common::{err, ascii, base64, util, challenge, url};
+use common::cipher::{aes, key, padding};
+
+
+const max_blocksize: usize = 32;
 
 
 pub static info: challenge::Info = challenge::Info {
@@ -21,11 +24,11 @@ struct User {
 
 
 impl User {
-    fn new(email: &str, uid: u32, role: &Role) -> User {
+    fn new(email: &str, uid: u32, role: &str) -> User {
         User {
-            email:  email.clone(),
+            email:  String::from(email),
             uid:    uid,
-            role:   role
+            role:   String::from(role)
         }
     }
 
@@ -33,22 +36,22 @@ impl User {
     fn encode(&self) -> Result<String, err::Error> {
         Ok(try!(url::encode(&vec![
             ("email", &self.email),
-            ("uid", self.uid),
-            ("role", &format!("{:?}", self)])))
+            ("uid", &format!("{}", self.uid)),
+            ("role", &self.role)])))
     }
 
 
     fn decode(param_string: &str) -> Result<User, err::Error> {
         let params = try!(url::decode(&param_string));
         Ok(User {
-            email:  params[0][1],
-            uid:    params[1][1].parse::<u32>(),
-            role:   
+            email:  params[0].1.clone(),
+            uid:    etry!(params[1].1.parse::<u32>(), "conversion error"),
+            role:   params[2].1.clone() })
     }
 }
 
 
-struct AuthBox {
+pub struct AuthBox {
     key:    Vec<u8>,
     mode:   aes::Mode
 }
@@ -57,7 +60,7 @@ struct AuthBox {
 impl AuthBox {
     fn new() -> Result<Self, err::Error> {
         let mode = aes::ecb_128_pkcs7;
-        Ok(CipherBox {
+        Ok(AuthBox {
             key:    try!(key::random(mode.blocksize)),
             mode:   mode
         })
@@ -65,24 +68,25 @@ impl AuthBox {
 
 
     fn authenticate(&self, cipher: &Vec<u8>) -> Result<String, err::Error> {
-        let plain = try!(aes::decrypt(&cipher, &self.mode));
-        let user = User::decode(&plain);
+        let plain_raw = try!(aes::decrypt(&cipher, &self.key, &self.mode));
+        let plain_str = try!(ascii::raw_to_str(&plain_raw));
+        let user = try!(User::decode(&plain_str));
         Ok(user.role)
     }
 
 
-    fn profile_for(&self, email: &Vec<u8>) -> Response {
-        let email_str = ertry!(ascii::raw_to_str(&email));
+    fn profile_for(&self, email: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
+        let email_str = try!(ascii::raw_to_str(&email));
 
-        let user = User::new(&email, 10, "user");
-        let encoded = ertry!(user.encode());
-        let enc_raw = ertry!(ascii::str_to_raw(&encoded));
-        ertry!(self.cipher.encrypt(&enc_raw))
+        let user = User::new(&email_str, 10, "user");
+        let encoded = try!(user.encode());
+        let enc_raw = try!(ascii::str_to_raw(&encoded));
+        Ok(try!(aes::encrypt(&enc_raw, &self.key, &self.mode)))
     }
 }
 
 
-pub fn auth_as_admin(authbox: &AuthBox) -> Result<(), err::Error> {
+pub fn auth_as_admin(authbox: &AuthBox) -> Result<bool, err::Error> {
     let blocksize = try!(detect_blocksize(&authbox, max_blocksize));
 
     let mut email_name = String::from("a");
@@ -105,7 +109,7 @@ pub fn auth_as_admin(authbox: &AuthBox) -> Result<(), err::Error> {
 
     email.push_str(&padded_suffix);
 
-    let token = try!(authbox.profile_for(&email));
+    let token = try!(authbox.profile_for(&raw!(&email)));
     let admin_block = token.chunks(blocksize).nth(1).unwrap();
 
 
@@ -120,33 +124,33 @@ pub fn auth_as_admin(authbox: &AuthBox) -> Result<(), err::Error> {
     email.push('@');
     email.push_str(&email_domain);
 
-    let new_token_prefix = String::from("email=");
+    let mut new_token_prefix = String::from("email=");
     new_token_prefix.push_str(&email);
     new_token_prefix.push_str("&uid=10&role=");
 
     let mut new_token_raw = try!(ascii::str_to_raw(&new_token_prefix));
-    new_token_raw.extend(&admin_block);
+    new_token_raw.extend(admin_block);
 
-    let new_token = try!(ascii::raw_to_str(&new_token_raw));
+    //let new_token = try!(ascii::raw_to_str(&new_token_raw));
 
 
-    let role = try!(authbox.authenticate(&new_token));
-    match role {
-        "admin" => println!("admin access granted !!"),
-        _       => println!("admin access denied :(")
+    let role = try!(authbox.authenticate(&new_token_raw));
+    match role.as_ref() {
+        "admin" => { println!("admin access granted !!"); Ok(true) },
+        _       => { println!("admin access denied :("); Ok(false) }
     }
 }
 
 
-fn detect_blocksize(authbox: &AuthBox, max_blocksize: usize) -> Result<usize, err::Error> {
+fn detect_blocksize(authbox: &AuthBox, max: usize) -> Result<usize, err::Error> {
     let mut email_name = String::from("a");
     let email_domain = "b.c";
 
-    let len1 = try!(authbox.profile_for(&String::from(&email_name).push_str(&email_domain))).len();
+    let len1 = try!(authbox.profile_for(&raw!(strjoin!(&email_name, &email_domain).as_ref()))).len();
 
-    for _ in 0 .. max_blocksize {
+    for _ in 0 .. max {
         email_name.push('a');
-        let len2 = try!(authbox.profile_for(&String::from(&email_name).push_str(&email_domain))).len();
+        let len2 = try!(authbox.profile_for(&raw!(strjoin!(&email_name, &email_domain).as_ref()))).len();
         if len2 > len1 {
             return Ok(len2 - len1);
         }
@@ -156,16 +160,16 @@ fn detect_blocksize(authbox: &AuthBox, max_blocksize: usize) -> Result<usize, er
 
 
 pub fn init_authbox() -> Result<AuthBox, err::Error> {
-    Ok(AuthBox::new())
+    Ok(try!(AuthBox::new()))
 }
 
 
-pub fn interactive() {
+pub fn interactive() -> err::ExitCode {
     //let mut role = String::new();
     //input!("enter role to break into: ", &mut role);
 
-
+    let authbox = rtry!(init_authbox(), exit_err!());
+    rtry!(auth_as_admin(&authbox), exit_err!());
+    exit_ok!()
 }
-
-
     

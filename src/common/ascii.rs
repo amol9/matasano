@@ -41,3 +41,24 @@ pub fn filter_whitespace(input: &str) -> Result<String, err::Error> {
     }
     Ok(output)
 }
+
+
+macro_rules! rts {
+    ( $x : expr ) => ( try!( ascii::raw_to_str( $x ) ) );
+}
+
+
+macro_rules! raw {
+    ( $x : expr ) => ( try!( ascii::str_to_raw( $x ) ) );
+}
+
+
+macro_rules! strjoin {
+    ( $ ( $x : expr ), * ) => (
+        {
+            let mut s = String::new();
+            ( $ ( s.push_str($x) ), * );
+            s
+        } );
+}
+

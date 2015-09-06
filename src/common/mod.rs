@@ -4,6 +4,7 @@ pub mod err;
 pub mod util;
 pub mod hex;
 pub mod base64;
+#[macro_use]
 pub mod ascii;
 pub mod cipher;
 pub mod charfreq;
