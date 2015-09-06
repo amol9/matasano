@@ -42,7 +42,6 @@ macro_rules! mkerr {
     ( $x : expr ) => ( Err(err::make(String::from($x))) );
 }
 
-#[macro_export]
 macro_rules! etry {
     ( $expr : expr , $msg : expr ) => ( match $expr {
                             Ok(v)   => { v },
@@ -61,6 +60,14 @@ macro_rules! ctry {
     ( $cond : expr , $msg : expr )  => (
         if $cond {
            return mkerr!($msg);
+        } );
+}
+
+macro_rules! ertry {
+    ( $x : expr ) => (
+        match $x {
+            Ok(v)  => v,
+            Err(e) => return e
         } );
 }
 
