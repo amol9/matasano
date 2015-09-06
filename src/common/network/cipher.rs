@@ -1,4 +1,5 @@
 
+use common::err;
 
 //a black box for encryption
 pub struct Cipher {
@@ -18,16 +19,12 @@ impl Cipher {
 
 
     fn encrypt(&self, data: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
-        let mut input = prefix.clone();
-        input.extend(&self.data);
-        aes::encrypt(&input, &self.key, &self.mode)
+        aes::encrypt(&data, &self.key, &self.mode)
     }
 
 
     fn decrypt(&self, data: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
-        let mut input = prefix.clone();
-        input.extend(&self.data);
-        aes::decrypt(&input, &self.key, &self.mode)
+        aes::decrypt(&data, &self.key, &self.mode)
     }
 }
 
