@@ -1,6 +1,7 @@
 
 use matasano::set2::breakaesecb as bae;
 use matasano::common::{base64, ascii};
+use matasano::common::cipher::cipherbox as cb;
 
 
 #[test]
@@ -10,8 +11,8 @@ fn test_cryptopals_case() {
                     dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg\
                     YnkK";
 
-    let cb = m!(bae::init_cipherbox(&plainb64));
-    let plain = m!(bae::break_aes_ecb(&cb));
+    let cbox = m!(cb::init(&plainb64));
+    let plain = m!(bae::break_aes_ecb(&cbox));
 
     assert_eq!(plain, m!(ascii::raw_to_str(&m!(base64::base64_to_raw(&plainb64)))));
 }
@@ -22,8 +23,8 @@ fn test_more() {
     fn test(plain: &str) {
         let raw = m!(ascii::str_to_raw(&plain));
         let b64 = m!(base64::raw_to_base64(raw));
-        let cb = m!(bae::init_cipherbox(&b64));
-        let p = m!(bae::break_aes_ecb(&cb));
+        let cbox = m!(cb::init(&b64));
+        let p = m!(bae::break_aes_ecb(&cbox));
         assert_eq!(p, plain);
     }
 

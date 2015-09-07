@@ -125,3 +125,13 @@ pub fn transpose_str(input: &str, length: u32) -> Result<Vec<String>, err::Error
     }
     Ok(result)
 }
+
+
+pub fn shift_left_and_push(input: &Vec<u8>, byte: u8) -> Result<Vec<u8>, err::Error> {
+    let mut input_iter = input.iter();
+    input_iter.next();
+    let mut result: Vec<u8> = input_iter.cloned().collect();
+    result.push(byte);
+    Ok(result)
+}
+

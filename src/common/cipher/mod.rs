@@ -4,4 +4,5 @@ pub mod padding;
 pub mod aes;
 pub mod key;
 pub mod oracle;
+pub mod cipherbox;
 

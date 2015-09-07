@@ -2,8 +2,9 @@ use std::env;
 use std::io;
 use std::io::Write;
 
-use common::{err, ascii, base64, util, challenge};
-use common::cipher::{aes, oracle, key};
+use common::{err, ascii, util, challenge};
+use common::cipher::{aes, oracle};
+use common::cipher::cipherbox as cb;
 
 
 pub static info: challenge::Info = challenge::Info {
@@ -17,39 +18,15 @@ pub static info: challenge::Info = challenge::Info {
 const max_blocksize: usize = 32;
 
 
-pub struct CipherBox {
-    key:    Vec<u8>,
-    data:   Vec<u8>,
-    mode:   aes::Mode
-}
-
-
-impl CipherBox {
-    fn new(data: &Vec<u8>, mode: aes::Mode) -> Result<Self, err::Error> {
-        Ok(CipherBox {
-            key:    try!(key::random(mode.blocksize)),
-            data:   data.clone(),
-            mode:   mode
-        })
-    }
-
-    fn encrypt(&self, prefix: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
-        let mut input = prefix.clone();
-        input.extend(&self.data);
-        aes::encrypt(&input, &self.key, &self.mode)
-    }
-}
-
-
 macro_rules! printr {
     ( $x : expr ) => ( try!(ascii::raw_to_str($x)) );
 }
 
 
-pub fn break_aes_ecb(cipherbox: &CipherBox) -> Result<String, err::Error> {
-    let (blocksize, plaintext_size) = try!(detect_blocksize_plainsize(&cipherbox, max_blocksize));
+pub fn break_aes_ecb(cbox: &cb::CipherBox) -> Result<String, err::Error> {
+    let (blocksize, plaintext_size) = try!(detect_blocksize_plainsize(&cbox, max_blocksize));
 
-    ctry!(!try!(oracle::detect_aes_ecb(&try!(cipherbox.encrypt(&vec![65 as u8; 2 * blocksize])), blocksize)),
+    ctry!(!try!(oracle::detect_aes_ecb(&try!(cbox.encrypt(&vec![65 as u8; 2 * blocksize])), blocksize)),
         "cipher is not aes ecb, can't break with this module");
 
     let max_u8 = 126;
@@ -63,8 +40,8 @@ pub fn break_aes_ecb(cipherbox: &CipherBox) -> Result<String, err::Error> {
     for i in 0 .. plaintext_size {
         //println!("{} - {}", printr!(&prefix), printr!(&dict_prefix));
 
-        let cipher = try!(cipherbox.encrypt(&prefix));
-        let dict = try!(make_dict(&dict_prefix, &cipherbox, max_u8));
+        let cipher = try!(cbox.encrypt(&prefix));
+        let dict = try!(cb::make_dict(&dict_prefix, &cbox, max_u8));
 
         let cipher_block: Vec<u8> = cipher.chunks(blocksize).nth(block_no).unwrap().to_vec();
 
@@ -82,7 +59,7 @@ pub fn break_aes_ecb(cipherbox: &CipherBox) -> Result<String, err::Error> {
         plainraw.push(raw_char);
         prefix.pop();
     
-        dict_prefix = try!(shift_left_and_push(&dict_prefix, raw_char));
+        dict_prefix = try!(util::shift_left_and_push(&dict_prefix, raw_char));
 
         if (i + 1) % blocksize == 0 {
             prefix = vec![65 as u8; blocksize - 1]; 
@@ -94,37 +71,12 @@ pub fn break_aes_ecb(cipherbox: &CipherBox) -> Result<String, err::Error> {
 }
 
 
-fn shift_left_and_push(input: &Vec<u8>, c: u8) -> Result<Vec<u8>, err::Error> {
-    let mut input_iter = input.iter();
-    input_iter.next();
-    let mut result: Vec<u8> = input_iter.cloned().collect();
-    result.push(c);
-    Ok(result)
-}
-
-
-pub fn make_dict(prefix: &Vec<u8>, cipherbox: &CipherBox, max_u8: u8) -> Result<Vec<Vec<u8>>, err::Error> {
-    let mut dict = Vec::<Vec<u8>>::new();
-    let mut block = prefix.clone();
-
-    for i in 1 .. max_u8 + 1 {
-        block.push(i as u8);
-        let cipher = try!(cipherbox.encrypt(&block));
-        let cipher_block0 = cipher.chunks(block.len()).next().unwrap().to_vec();
-
-        dict.push(cipher_block0);
-        block.pop();
-    }
-    Ok(dict)
-}
-
-
-pub fn detect_blocksize_plainsize(cipherbox: &CipherBox, max: usize) -> Result<(usize, usize), err::Error> {
-    let len1 = try!(cipherbox.encrypt(&Vec::<u8>::new())).len();
+pub fn detect_blocksize_plainsize(cbox: &cb::CipherBox, max: usize) -> Result<(usize, usize), err::Error> {
+    let len1 = try!(cbox.encrypt(&Vec::<u8>::new())).len();
 
     let mut prefix = vec![65 as u8];
     for i in 0 .. max {
-        let len2 = try!(cipherbox.encrypt(&prefix)).len();
+        let len2 = try!(cbox.encrypt(&prefix)).len();
         if len2 > len1 {
             return Ok((len2 - len1, len1 - prefix.len() + 1));
         }
@@ -134,28 +86,14 @@ pub fn detect_blocksize_plainsize(cipherbox: &CipherBox, max: usize) -> Result<(
 }
 
 
-pub fn init_cipherbox_from_file(filepath: &str) -> Result<CipherBox, err::Error> {
-    let plain_base64 = try!(util::read_file_to_str(&filepath));
-    let clean_base64 = try!(ascii::filter_whitespace(&plain_base64));
-
-    init_cipherbox(&clean_base64)
-}
-
-
-pub fn init_cipherbox(plaintext_base64: &str) -> Result<CipherBox, err::Error> {
-    let plainraw = try!(base64::base64_to_raw(&plaintext_base64));
-    CipherBox::new(&plainraw, aes::ecb_128_pkcs7)
-}
-
-
 pub fn interactive() -> err::ExitCode {
     let input_filepath = match env::args().nth(2) {
         Some(v) => v,
         None    => { println!("please specify input data (base64 encoded) filepath"); return exit_err!(); }
     };
 
-    let cipherbox = rtry!(init_cipherbox_from_file(&input_filepath), exit_err!());
-    let plaintext = rtry!(break_aes_ecb(&cipherbox), exit_err!());
+    let cbox = rtry!(cb::init_from_file(&input_filepath), exit_err!());
+    let plaintext = rtry!(break_aes_ecb(&cbox), exit_err!());
 
     //println!("{}", plaintext);
     exit_ok!()
