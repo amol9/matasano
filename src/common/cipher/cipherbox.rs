@@ -105,7 +105,7 @@ pub fn make_dict_for_random_prefix_cb(prefix: &Vec<u8>, cbox: &CipherBox, char_r
 fn get_prefix_cipher(input: &Vec<u8>, cbox: &CipherBox, blockA: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
     let blocksize = blockA.len();
 
-    for _ in 0 .. blocksize * 10 {
+    for _ in 0 .. blocksize * 20 {
         let cipher = try!(cbox.encrypt(&input));
         let mut block_iter = cipher.chunks(blocksize);
 

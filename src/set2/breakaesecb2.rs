@@ -76,7 +76,7 @@ pub fn break_aes_ecb(cbox: &cb::CipherBox) -> Result<String, err::Error> {
                 printc!(c);
 
                 plaintext.push(c);
-                ord_ciphers.push(cipher.clone());
+                ord_ciphers.push(ciphers[j].clone());
                 ciphers.remove(j);
                 prefix = try!(util::shift_left_and_push(&prefix, c as u8));
                 break;
@@ -87,15 +87,23 @@ pub fn break_aes_ecb(cbox: &cb::CipherBox) -> Result<String, err::Error> {
     ctry!(ciphers.len() > 1, "only one cipher (0-shifted) should be left by now");
     ciphers.extend(ord_ciphers);
     ord_ciphers = ciphers;
+    //println!("ord cipher len: {}", ord_ciphers.len());
+    let mut it = ord_ciphers.iter();
+    for c in it {
+        //println!("len : {}\n {}", c.len(), rts!(c));
+        
+    }
 
     let len1 = ord_ciphers[0].len();
-    let pos = ord_ciphers.iter().position(|v| v.len() != len1).unwrap();
-    let rem_plaintext_len = ord_ciphers[pos].len() - (ord_ciphers.len() - 1 - pos) - plaintext.len();
+    let pos = ord_ciphers.iter().rev().position(|v| v.len() != len1).unwrap();
+    let rem_plaintext_len = ord_ciphers[blocksize - pos - 1].len() - (pos + 1) - (blocksize - 1) - plaintext.len();
+
+    //println!("total len: {}", rem_plaintext_len + plaintext.len());
 
     let mut ord_ciphers_it = ord_ciphers.iter().cycle();
     let mut block_no: usize = 0;
 
-    for i in blocksize - 1 .. rem_plaintext_len {
+    for i in blocksize - 1 .. rem_plaintext_len + blocksize - 1 {
         let dict = try!(cb::make_dict_for_random_prefix_cb(&prefix, &cbox, &valid_chars, &blockA));
         
         let cipher_block = ord_ciphers_it.next().unwrap().chunks(blocksize).nth(block_no).unwrap().to_vec();
@@ -119,7 +127,7 @@ pub fn break_aes_ecb(cbox: &cb::CipherBox) -> Result<String, err::Error> {
 
 
 fn push_if_not_in(vecs: &mut Vec<Vec<u8>>, nvec: &Vec<u8>) {
-    if vecs.iter().find(|&v| v == nvec)  == None {
+    if vecs.iter().find(|&v| v == nvec) == None {
         vecs.push(nvec.clone());
     }
 }
