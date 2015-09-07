@@ -63,6 +63,16 @@ macro_rules! strjoin {
 }
 
 
+macro_rules! rawjoin {
+    ( $ ( $x : expr ), * ) => (
+        {
+            let mut r = Vec::<u8>::new();
+            ( $ ( r.extend($x) ), * );
+            r
+        } );
+}
+
+
 macro_rules! strn {
     ( $c : expr, $n : expr ) => ( 
         { 
@@ -74,4 +84,4 @@ macro_rules! strn {
         } );
 }
 
-
+pub const valid_chars = [ 9, 10, 13, 32 .. 126 ];

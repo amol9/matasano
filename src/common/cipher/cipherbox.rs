@@ -82,3 +82,42 @@ pub fn make_dict(prefix: &Vec<u8>, cipherbox: &CipherBox, max_u8: u8) -> Result<
 }
 
 
+pub fn make_dict_for_random_prefox_cb(prefix: &Vec<u8>, cipherbox: &CipherBox, char_range: &Vec<u8>, blockA: &Vec<u8>) ->
+    Result<Vec<Vec<u8>>, err::Error> {
+
+    let blocksize = blockA.len();
+    let p = vec![65; blocksize];
+    let mut block = prefix.clone();
+    let mut dict = Vec::<Vec<u8>>::new();
+
+    for c in char_range {
+        block.push(c);
+        let input = rawjoin(&p, &block, &p);
+        dict.push(try!(get_prefix_cipher(&input, &cbox, &blockA)));
+        block.pop();
+    }
+    Ok(dict)
+}
+
+
+fn get_prefix_cipher(input: &Vec<u8>, cbox: &CipherBox, blockA: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
+    let blocksize = blockA.len();
+
+    for _ in blocksize * 3 {
+        let cipher = try!(cbox.encrypt(&input));
+        let block_iter = cipher.chunks(blocksize);
+
+        let mut b1 = block_iter.next().unwrap();
+        let mut b2 = block_iter.next().unwrap();
+
+        for b3 in block_iter {
+            if b3 == blockA && b1 == blockA{
+                return OK(b2.clone());
+            }
+            b1 = b2;
+            b2 = b3;
+        }
+    }
+    mkerr!("cannot get cipher for prefix")
+}
+    
