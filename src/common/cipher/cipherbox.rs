@@ -82,7 +82,7 @@ pub fn make_dict(prefix: &Vec<u8>, cipherbox: &CipherBox, max_u8: u8) -> Result<
 }
 
 
-pub fn make_dict_for_random_prefox_cb(prefix: &Vec<u8>, cipherbox: &CipherBox, char_range: &Vec<u8>, blockA: &Vec<u8>) ->
+pub fn make_dict_for_random_prefix_cb(prefix: &Vec<u8>, cipherbox: &CipherBox, char_range: &Vec<u8>, blockA: &Vec<u8>) ->
     Result<Vec<Vec<u8>>, err::Error> {
 
     let blocksize = blockA.len();

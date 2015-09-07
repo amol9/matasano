@@ -1,6 +1,7 @@
 use std::cmp;
 use std::iter;
 use std::io;
+use std::io::Write;
 use std::io::prelude::*;
 use std::fs::File;
 use std::fs;
@@ -133,5 +134,12 @@ pub fn shift_left_and_push(input: &Vec<u8>, byte: u8) -> Result<Vec<u8>, err::Er
     let mut result: Vec<u8> = input_iter.cloned().collect();
     result.push(byte);
     Ok(result)
+}
+
+
+macro_rules! prints {
+    ( $x : expr ) => ( 
+        print!( $x );
+        io::stdout().flush(); );
 }
 

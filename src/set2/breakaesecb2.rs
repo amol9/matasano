@@ -58,35 +58,59 @@ pub fn break_aes_ecb(cbox: &cb::CipherBox) -> Result<String, err::Error> {
     
     let mut ord_ciphers = Vec::<Vec<u8>>::new();
     let mut plaintext = String::new();
+    let mut prefix = vec![65; blocksize - 1];
 
-    for i in (blocksize - 1 .. 0).step_by(-1) {
-        let dict = try!(cb::make_dict_for_random_prefox_cb(&vec![65; i], &cbox, &ascii::valid_chars, &blockA));
+    for i in 0 .. (blocksize - 1) {
+        let dict = try!(cb::make_dict_for_random_prefix_cb(&prefix, &cbox, &ascii::valid_chars, &blockA));
         
         for j in 0 .. ciphers.len() {
             let block0 = ciphers[j].chunks(blocksize).next().unwrap().to_vec();
 
-            let pos = dict.position(|&b| b == block0);
+            let pos = match dict.iter().position(|&b| b == block0);
+
             if pos != None {
-                plaintext.push(ascii::valid_chars[pos]);
+                let c = ascii::valid_chars[pos];
+                prints!("{}", c);
+
+                plaintext.push(c);
                 ord_ciphers.push(cipher.clone());
                 ciphers.remove(j);
+                try!(util::shift_left_and_push(c as u8));
                 break;
             }
         }
     }
 
     ctry!(ciphers.len() > 1, "only one cipher (0-shifted) should be left by now");
-    ord_ciphers.push(ciphers[0].clone());
+    ord_ciphers = ciphers.extend(&ord_ciphers);
 
     let len1 = ord_ciphers[0].len();
     let pos = ord_ciphers.position(|&v| v.len() != len1);
     let rem_plaintext_len = ord_ciphers[pos].len() - (ord_ciphers.len() - 1 - pos) - plaintext.len();
 
+    let mut ord_ciphers_it = ord_ciphers.cycle();
+    let mut block_no: usize = 0;
+
     for i in plaintext.len() .. rem_plaintext_len {
+        let dict = try!(cb::make_dict_for_random_prefix_cb(&prefix, &cbox, &ascii::valid_chars, &blockA));
         
+        let cipher_block = ord_ciphers_it.next().unwrap().chunks(blocksize).nth(block_no).unwrap().to_vec();
+        
+        let c: char = match dict.iter().position(|&v| v == cipher_block) {
+            Some(v) => ascii::valid_chars[pos],
+            None    => return mkerr!(format!("error at position: {}, cannot find matching block in dictionary", i))
+        };
+
+        prints!("{}", c);
+        plaintext.push(c as char);
+        try!(shift_left_and_push(&prefix, c));
+
+        if i % blocksize == 0 {
+            block_no += 1;
+        }
     }
 
-    
+    Ok(plaintext)    
 }
 
 
@@ -126,3 +150,4 @@ fn interactive() -> err::ExitCode {
     //println!("{}", plaintext);
     exit_ok!()
 }
+
