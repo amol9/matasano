@@ -84,4 +84,10 @@ macro_rules! strn {
         } );
 }
 
-pub const valid_chars = [ 9, 10, 13, 32 .. 126 ];
+pub fn valid_chars() -> Vec<u8> {
+    let mut chars = vec![ 9, 10, 13 ];
+    for i in 32 .. 127 {
+        chars.push(i); 
+    }
+    chars
+}

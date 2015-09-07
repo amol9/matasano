@@ -1,7 +1,6 @@
 use std::cmp;
 use std::iter;
 use std::io;
-use std::io::Write;
 use std::io::prelude::*;
 use std::fs::File;
 use std::fs;
@@ -137,9 +136,9 @@ pub fn shift_left_and_push(input: &Vec<u8>, byte: u8) -> Result<Vec<u8>, err::Er
 }
 
 
-macro_rules! prints {
+macro_rules! printc {
     ( $x : expr ) => ( 
-        print!( $x );
+        print!("{}", $x );
         io::stdout().flush(); );
 }
 

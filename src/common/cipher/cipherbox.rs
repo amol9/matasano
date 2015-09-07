@@ -82,7 +82,7 @@ pub fn make_dict(prefix: &Vec<u8>, cipherbox: &CipherBox, max_u8: u8) -> Result<
 }
 
 
-pub fn make_dict_for_random_prefix_cb(prefix: &Vec<u8>, cipherbox: &CipherBox, char_range: &Vec<u8>, blockA: &Vec<u8>) ->
+pub fn make_dict_for_random_prefix_cb(prefix: &Vec<u8>, cbox: &CipherBox, char_range: &Vec<u8>, blockA: &Vec<u8>) ->
     Result<Vec<Vec<u8>>, err::Error> {
 
     let blocksize = blockA.len();
@@ -91,8 +91,10 @@ pub fn make_dict_for_random_prefix_cb(prefix: &Vec<u8>, cipherbox: &CipherBox, c
     let mut dict = Vec::<Vec<u8>>::new();
 
     for c in char_range {
-        block.push(c);
-        let input = rawjoin(&p, &block, &p);
+        //println!("dict char: {}", ascii::u8_to_char(*c));
+        block.push(c.clone());
+        //println!("prefix block: {}", rts!(&block));
+        let input = rawjoin!(&p, &block, &p);
         dict.push(try!(get_prefix_cipher(&input, &cbox, &blockA)));
         block.pop();
     }
@@ -103,16 +105,16 @@ pub fn make_dict_for_random_prefix_cb(prefix: &Vec<u8>, cipherbox: &CipherBox, c
 fn get_prefix_cipher(input: &Vec<u8>, cbox: &CipherBox, blockA: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
     let blocksize = blockA.len();
 
-    for _ in blocksize * 3 {
+    for _ in 0 .. blocksize * 10 {
         let cipher = try!(cbox.encrypt(&input));
-        let block_iter = cipher.chunks(blocksize);
+        let mut block_iter = cipher.chunks(blocksize);
 
         let mut b1 = block_iter.next().unwrap();
         let mut b2 = block_iter.next().unwrap();
 
         for b3 in block_iter {
-            if b3 == blockA && b1 == blockA{
-                return OK(b2.clone());
+            if &b3.to_vec() == blockA && &b1.to_vec() == blockA{
+                return Ok(b2.to_vec());
             }
             b1 = b2;
             b2 = b3;
