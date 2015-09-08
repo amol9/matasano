@@ -14,12 +14,19 @@ fn test(plain: &str) {
 }
 
 
+#[ignore]   //time consuming
 #[test]
 fn test_break() {
-    //test("hello");
+    test("hello");
     test("1234567890123456");
     test("this is a simple one-line message");
     test("hi,\nthis is a multi-line message\nok\n");
     test("a");
-
 }
+
+
+#[test]
+fn test_break_quick() {
+    test("123456789012345678");
+}
+

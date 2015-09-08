@@ -2,7 +2,6 @@ use std::env;
 use std::io;
 use std::io::Write;
 
-
 use common::{err, util, challenge, ascii};
 use common::cipher::cipherbox as cb;
 
@@ -28,10 +27,13 @@ pub fn break_aes_ecb(cbox: &cb::CipherBox) -> Result<String, err::Error> {
 
     let mut ciphers = try!(find_target_ciphers_for_each_byte_shift(&cbox, blocksize, &blockA));
 
-    let (mut plaintext, ord_ciphers) = try!(break_first_block(&cbox, blocksize, &blockA, &mut ciphers));
+    let (mut plaintext, ord_ciphers, finished) = try!(break_first_block(&cbox, blocksize, &blockA, &mut ciphers));
 
-    let plaintext = try!(break_rem_blocks(&cbox, blocksize, &blockA, &ord_ciphers, &plaintext));
+    if ! finished {
+        plaintext = try!(break_rem_blocks(&cbox, blocksize, &blockA, &ord_ciphers, &plaintext));
+    }
 
+    println!("");
     Ok(plaintext)
 }
 
@@ -101,7 +103,7 @@ pub fn find_target_ciphers_for_each_byte_shift(cbox: &cb::CipherBox, blocksize: 
 // returns: plaintext (blocksize - 1 chars), ordered ciphers
 //
 fn break_first_block<'a>(cbox: &cb::CipherBox, blocksize: usize, blockA: &Vec<u8>, ciphers: &'a mut Vec<Vec<u8>>) ->
-    Result<(String, &'a Vec<Vec<u8>>), err::Error> {
+    Result<(String, &'a Vec<Vec<u8>>, bool), err::Error> {
 
     let mut ord_ciphers = Vec::<Vec<u8>>::new();
     let mut plaintext = String::new();
@@ -130,17 +132,10 @@ fn break_first_block<'a>(cbox: &cb::CipherBox, blocksize: usize, blockA: &Vec<u8
         }
     }
 
-    ctry!(ciphers.len() > 1, "only one cipher (0-shifted) should be left by now");
+    let mut finished: bool = ciphers.len() > 1;         //plain text smaller than a blocksize
     ciphers.extend(ord_ciphers);
-    //ord_ciphers = *ciphers;
-    //println!("ord cipher len: {}", ord_ciphers.len());
-    //let mut it = ord_ciphers.iter();
-    //for c in it {
-        //println!("len : {}\n {}", c.len(), rts!(c));
-        
-    //}
 
-    Ok((plaintext, ciphers))
+    Ok((plaintext, ciphers, finished))
 }
 
 
@@ -154,13 +149,14 @@ fn break_first_block<'a>(cbox: &cb::CipherBox, blocksize: usize, blockA: &Vec<u8
 fn break_rem_blocks(cbox: &cb::CipherBox, blocksize: usize, blockA: &Vec<u8>, ord_ciphers: &Vec<Vec<u8>>, partial_plaintext: &str) ->
     Result<String, err::Error> {
 
+    ctry!(ord_ciphers.len() != blocksize, "ordered ciphers != block size");
     let mut plaintext = String::from(partial_plaintext);
 
-    let len1 = ord_ciphers[0].len();                    //determine the length of remaining plain text
-    let pos = ord_ciphers.iter().rev().position(|v| v.len() != len1).unwrap();
-    let rem_plaintext_len = ord_ciphers[blocksize - pos - 1].len() - (pos + 1) - (blocksize - 1) - plaintext.len();
-
-    //println!("total len: {}", rem_plaintext_len + plaintext.len());
+    let len1 = ord_ciphers[0].len();                            // determine the length of remaining plain text
+    let rem_plaintext_len = match ord_ciphers.iter().rev().position(|c| c.len() != len1) {
+        Some(v) => ord_ciphers[blocksize - v - 1].len() - (v + 1) - (blocksize - 1) - plaintext.len(),
+        None    => len1 - (blocksize - 1) - plaintext.len()     // all ciphers same size => plain text size = cipher size - (blocksize - 1)
+    };
 
     let mut ord_ciphers_it = ord_ciphers.iter().cycle();
     let mut block_no: usize = 0;
