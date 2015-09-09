@@ -21,6 +21,24 @@ macro_rules! mr {
     } );
 }
 
+
+// macro to check if error is thrown
+// on Ok  => return false
+// on Err => return true
+macro_rules! me {
+    ( $x : expr ) => ( match $x {
+        Ok(v)   => false,
+        Err(e)  => { println!("{}", e); true }
+    } );
+}
+
+
 macro_rules! rn {
     ( $x : expr ) => ( mr!( $x , None ) );
 }
+
+
+macro_rules! r {
+    ( $x : expr ) => ( m!( ascii::str_to_raw( $x ) ) );
+}
+

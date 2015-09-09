@@ -1,6 +1,6 @@
 use std::char;
 
-use common::err;
+use common::{err, hex};
 
 
 pub fn raw_to_str(raw: &Vec<u8>) -> Result<String, err::Error> {
@@ -84,6 +84,7 @@ macro_rules! strn {
         } );
 }
 
+
 pub fn valid_chars() -> Vec<u8> {
     let mut chars = vec![ 9, 10, 13 ];
     for i in 32 .. 127 {
@@ -91,3 +92,30 @@ pub fn valid_chars() -> Vec<u8> {
     }
     chars
 }
+
+
+// convert stdin input strings containing hex chars, like, \x01
+pub fn scan_hex(input: &str) -> Result<String, err::Error> {
+    let mut output = String::new();
+    let mut char_it = input.chars();
+
+    let mut c = char_it.next();
+    while c != None {
+        if c.unwrap() == '\\' {
+            let (x, h1, h2) = (char_it.next(), char_it.next(), char_it.next());
+            if ( x != None && x.unwrap() == 'x' && h1 != None && h2 != None ) {
+                let xc = try!(hex::hex_char_to_u8(h1.unwrap())) << 4 | try!(hex::hex_char_to_u8(h2.unwrap()));
+                output.push(u8_to_char(xc));
+            } else {
+                for _ in 0 .. 3 {
+                    char_it.next_back();
+                }
+            }
+        } else {
+            output.push(c.unwrap());
+        }
+        c = char_it.next();
+    }
+    Ok(output)
+}
+

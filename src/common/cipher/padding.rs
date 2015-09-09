@@ -1,5 +1,5 @@
 
-use common::err;
+use common::{err, ascii};
 
 
 pub fn pkcs7(input: &mut String, blocksize: usize) -> Result<(), err::Error> {
@@ -85,10 +85,15 @@ pub fn pkcs7_detect(block: &Vec<u8>, blocksize: usize) -> Result<usize, err::Err
     let mut i = block.iter().rev();
     let padsize: usize = *i.next().unwrap() as usize;
 
+
     if padsize < blocksize {
         for _ in 0 .. (padsize - 1) {
             let c = *i.next().unwrap();
             if c as usize != padsize {
+                let valid_chars = ascii::valid_chars();
+                if valid_chars.iter().find(|&c| *c == padsize as u8) == None {
+                    return mkerr!("invalid padding");
+                }
                 return Ok(0);
             }
         }           
