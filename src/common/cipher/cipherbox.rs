@@ -5,12 +5,15 @@ use self::rand::Rng;
 use common::{err, ascii, util, base64};
 use common::cipher::{key, aes};
 
+
 pub struct CipherBox {
     key:            Vec<u8>,
     target_data:    Vec<u8>,
     mode:           aes::Mode,
     random_prefix:  bool,
-    max_random_len: usize
+    max_random_len: usize,
+    //prefix:         Vec<u8>,
+    //suffix:         Vec<u8>
 }
 
 

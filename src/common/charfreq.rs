@@ -7,7 +7,7 @@ use std::env;
 use common::{err, ascii};
 
 
-static BASE_FREQ_FILENAME: &'static str = "base_freq";
+static BASE_FREQ_FILENAME: &'static str = "basefreq";
 
 
 pub fn compute_base_frequency(sample_filepath: &str) -> Result<Vec<f32>, err::Error> {
@@ -51,7 +51,7 @@ pub fn compute_char_frequency(text: &str) -> Result<Vec<f32>, err::Error> {
 pub fn get_base_freq() -> Result<Vec<f32>, err::Error> {
     match fs::metadata(&BASE_FREQ_FILENAME) {
         Ok(_)   => {}, 
-        Err(e)  => return mkerr!("base frequency file not found, please generate it using option: \"genbase <sample text filepath>\"")
+        Err(e)  => return mkerr!("base frequency file not found, please generate it using option: \"charfreq <sample text filepath>\"")
     };
 
     let mut f = etry!(File::open(BASE_FREQ_FILENAME), "could not open base frequency file");
