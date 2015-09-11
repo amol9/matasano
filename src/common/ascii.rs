@@ -32,6 +32,11 @@ pub fn u8_to_char(input: u8) -> char {
 }
 
 
+macro_rules! chr {
+    ( $x : expr ) => ( ascii::u8_to_char( $x ) );
+}
+
+
 pub fn filter_whitespace(input: &str) -> Result<String, err::Error> {
     let mut output = String::new();
     for c in input.chars() {

@@ -8,8 +8,8 @@ Challenges: http://cryptopals.com
 Progress
 ========
 
-* Set 1: complete (1 - 8)
-* Set 2: (9 - 15)
+* Set 1: complete (01-08)
+* Set 2: complete (09-16)
 
 
 Platform
