@@ -11,9 +11,7 @@ pub struct CipherBox {
     target_data:    Vec<u8>,
     mode:           aes::Mode,
     random_prefix:  bool,
-    max_random_len: usize,
-    //prefix:         Vec<u8>,
-    //suffix:         Vec<u8>
+    max_random_len: usize
 }
 
 

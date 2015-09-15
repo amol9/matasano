@@ -5,6 +5,7 @@ use std::convert::AsRef;
 extern crate matasano;
 use self::matasano::set1;
 use self::matasano::set2;
+use self::matasano::set3;
 use self::matasano::common::{challenge, charfreq};
 
 
@@ -26,7 +27,9 @@ fn main() {
 
 
 fn execute_challenge(problem_no_str: &str) -> i32 {
-    let mut all_challenges = set1::challenges.iter().chain(set2::challenges.iter());
+    let mut all_challenges =    set1::challenges.iter().chain(
+                                set2::challenges.iter().chain(
+                                set3::challenges.iter()));
 
 	let problem_no = match problem_no_str.parse::<u32>() {
             Ok(v)  => v,
@@ -45,6 +48,7 @@ fn execute_challenge(problem_no_str: &str) -> i32 {
 fn print_challenge_list() -> i32 {
     print_set(&set1::challenges, 1);
     print_set(&set2::challenges, 2);
+    print_set(&set3::challenges, 3);
     0
 }
 
