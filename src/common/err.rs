@@ -4,8 +4,16 @@ use std::convert;
 
 
 #[derive(Debug)]
+pub enum Type {
+    Default,
+    Padding
+}
+
+
+#[derive(Debug)]
 pub struct Error {
-	cause: String,
+	pub cause:      String,
+    pub errtype:    Type
 }
 
 
@@ -31,16 +39,24 @@ impl convert::From<Error> for String {
 
 
 pub fn make_error(msg: String) -> Error {
-	Error {cause: msg}
+	Error {
+        cause:      msg,
+        errtype:    Type::Default}
 }
 
-pub fn make(msg: String) -> Error {
-	Error {cause: msg}
+
+pub fn make(msg: String, errtype: Type) -> Error {
+	Error {
+        cause:      msg,
+        errtype:    errtype}
 }
+
 
 macro_rules! mkerr {
-    ( $x : expr ) => ( Err(err::make(String::from($x))) );
+    ( $x : expr )               => ( Err(err::make(String::from($x), err::Type::Default)) );
+    ( $x : expr, $y : expr )    => ( Err(err::make(String::from($x), $y)) );
 }
+
 
 macro_rules! etry {
     ( $expr : expr , $msg : expr ) => ( match $expr {
@@ -49,6 +65,7 @@ macro_rules! etry {
                             } );
 }
 
+
 macro_rules! rtry {
     ( $expr : expr , $ret : expr ) => ( match $expr {
                             Ok(v)   => { v },
@@ -56,12 +73,14 @@ macro_rules! rtry {
                             } );
 }
 
+
 macro_rules! ctry {
     ( $cond : expr , $msg : expr )  => (
         if $cond {
            return mkerr!($msg);
         } );
 }
+
 
 macro_rules! ertry {
     ( $x : expr ) => (

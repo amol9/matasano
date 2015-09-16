@@ -92,7 +92,7 @@ pub fn pkcs7_detect(block: &Vec<u8>, blocksize: usize) -> Result<usize, err::Err
             if c as usize != padsize {
                 let valid_chars = ascii::valid_chars();
                 if valid_chars.iter().find(|&c| *c == padsize as u8) == None {
-                    return mkerr!("invalid padding");
+                    return mkerr!("invalid padding", err::Type::Padding);
                 }
             }
         }           

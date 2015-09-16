@@ -1,4 +1,5 @@
 use std::char;
+use std::slice;
 
 use common::{err, hex};
 

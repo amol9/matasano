@@ -50,6 +50,11 @@ impl CipherBox {
         let mut rng = rand::thread_rng();
         Ok((0 .. rng.gen::<usize>() % self.max_random_len).map(|_| rng.gen::<u8>()).collect())
     }
+
+
+    pub fn decrypt(&self, cipher: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
+        aes::decrypt(&cipher, &self.key, &self.mode)
+    }
 }
 
 
