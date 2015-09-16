@@ -62,6 +62,8 @@ pub fn pkcs7_pad(block: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Erro
 
 pub fn pkcs7_unpad(block: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Error> {
     let padsize = try!(pkcs7_detect(&block, blocksize));
+    //println!("padsize: {}", padsize);
+
     let mut result = block.clone();
     result.truncate(block.len() - padsize);
     Ok(result)
@@ -80,13 +82,14 @@ pub fn no_unpad(block: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Error
 
 
 pub fn pkcs7_detect(block: &Vec<u8>, blocksize: usize) -> Result<usize, err::Error> {
+    ctry!(block.len() == 0, "pkcs7 error: empty block");
     ctry!(block.len() % blocksize != 0, "pkcs7 error: padded data not a multiple of block size");
 
     let mut i = block.iter().rev();
     let padsize: usize = *i.next().unwrap() as usize;
 
 
-    if padsize < blocksize {
+    if padsize <= blocksize && padsize != 0 {
         for _ in 0 .. (padsize - 1) {
             let c = *i.next().unwrap();
             if c as usize != padsize {
@@ -94,6 +97,7 @@ pub fn pkcs7_detect(block: &Vec<u8>, blocksize: usize) -> Result<usize, err::Err
                 if valid_chars.iter().find(|&c| *c == padsize as u8) == None {
                     return mkerr!("invalid padding", err::Type::Padding);
                 }
+                return Ok(0);
             }
         }           
     } else {

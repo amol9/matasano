@@ -1,4 +1,3 @@
-use std::slice;
 
 extern crate rand;
 use self::rand::Rng;
@@ -44,7 +43,7 @@ impl OBox {
     fn get_cipher(&self) -> Result<Vec<u8>, err::Error> {
         let mut rng = rand::thread_rng();
         let rand_idx = rng.gen::<usize>() % 10;
-        Ok(try!(self.cbox.encrypt(&raw!(self.strings[rand_idx]))))
+        Ok(try!(self.cbox.encrypt(&raw!(self.strings[0]))))
     }
 
 
@@ -75,24 +74,29 @@ pub fn break_cbc(obox: &OBox) -> Result<String, err::Error> {
     let mut b2 = cipher_block_itr.next();
     let mut b1 = cipher_block_itr.next();
 
-    while b2 != None {
+    let mut last = false;
+    while ! last {
         if b1 == None {
             b1 = b2;
+            last = true;
         }
 
         let b12 = rawjoin!(b1.unwrap().into_iter(), b2.unwrap().into_iter());
+        println!("b12 len: {}", b12.len());
+
         let plain_block = try!(break_last_block(&obox, &b12, blocksize));
+        println!("plain block: {}", rts!(&plain_block));
         plain.extend(&plain_block);
 
-        b1 = b2;
-        b2 = cipher_block_itr.next();
+        b2 = b1;
+        b1 = cipher_block_itr.next();
     }
     Ok(rts!(&try!(padding::pkcs7_unpad(&plain, blocksize))))
 }
 
 
 fn break_last_block(obox: &OBox, cipher: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Error> {
-    ctry!(cipher.len() >= blocksize * 2, "need at least two blocks of cipher (real or made up) to break the last block");
+    ctry!(cipher.len() < blocksize * 2, "need at least two blocks of cipher (real or made up) to break the last block");
 
     let mut byte_index = blocksize - 1;
     let mut padsize = blocksize - byte_index;
@@ -103,22 +107,32 @@ fn break_last_block(obox: &OBox, cipher: &Vec<u8>, blocksize: usize) -> Result<V
     let sec_last_block = block_iter.next().unwrap().to_vec();
 
     for i in 0 .. blocksize {
-        for guess in 0 .. 255 {
+        for guess in 0 .. 128 {
             let mut b1: Vec<u8> = sec_last_block.clone();
-            b1 = plain_rev.iter().zip(b1.iter().rev()).map(|(&p, &c)| c ^ p ^ padsize as u8).collect();
+
+            for i in 0 .. plain_rev.len() {
+                b1[blocksize - 1 - i] ^= plain_rev[i] ^ padsize as u8;
+            }
 
             b1[byte_index] ^= guess ^ padsize as u8;
 
             match try!(obox.decrypt(&rawjoin!(b1.into_iter(), last_block.clone().into_iter()))) {
                 true  => { 
                     plain_rev.push(guess);
-                    byte_index += 1;
-                    padsize = blocksize - byte_index;
+                    //print!("guessed right {} ", chr!(guess));
+                    if byte_index > 0 {
+                        byte_index -= 1;
+                        padsize += 1;
+                    }
                     break
                 },
                 false => {}
             };
+            if guess == 127 {
+                println!("guess failed for byte: {}", blocksize - 1 - i);
+            }
         }
+        //println!("byte: {}", blocksize - 1 - i);
     }
     Ok(plain_rev.iter().rev().cloned().collect())
 }

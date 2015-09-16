@@ -41,7 +41,7 @@ impl CipherBox {
 
         data.extend(input);
         data.extend(&self.target_data);
-
+        println!("enc plain data of len: {}", data.len());
         aes::encrypt(&data, &self.key, &self.mode)
     }
 
