@@ -1,5 +1,4 @@
 
-
 use matasano::common::cipher::aes;
 use matasano::common::ascii;
 
@@ -40,7 +39,7 @@ fn test_dec(input: &str, key: &str, olen: usize) -> String {
 fn test_enc_dec(plain: &str, key: &str) {
     let cipher: String;
 
-    cipher = test_enc(&plain, &key, (plain.len() as f32 / 16f32).ceil() as usize * 16);
+    cipher = test_enc(&plain, &key, (plain.len() as f32 / 16f32).ceil() as usize * 16 + 16);
     test_dec(&cipher, &key, plain.len());
 }
 

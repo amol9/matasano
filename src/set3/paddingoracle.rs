@@ -43,13 +43,13 @@ impl OBox {
     fn get_cipher(&self) -> Result<Vec<u8>, err::Error> {
         let mut rng = rand::thread_rng();
         let rand_idx = rng.gen::<usize>() % 10;
-        Ok(try!(self.cbox.encrypt(&raw!(self.strings[0]))))
+        self.cbox.encrypt(&raw!(self.strings[rand_idx]))
     }
 
 
     fn decrypt(&self, cipher: &Vec<u8>) -> Result<bool, err::Error> {
         match self.cbox.decrypt(&cipher) {
-            Ok(v)  => Ok(v.len() != cipher.len()),
+            Ok(v)  => Ok((v.len() + 16) != cipher.len()),
             Err(e) => match e.errtype {
                 err::Type::Padding  => Ok(false),
                 _                   => Err(e)
@@ -68,29 +68,26 @@ pub fn break_cbc(obox: &OBox) -> Result<String, err::Error> {
     let blocksize = 16;
 
     let cipher = try!(obox.get_cipher());
+    println!("cipher len: {}", cipher.len());
+
     let mut plain = Vec::<u8>::new();
 
-    let mut cipher_block_itr = cipher.chunks(blocksize).rev();
-    let mut b2 = cipher_block_itr.next();
+    let mut cipher_block_itr = cipher.chunks(blocksize);
     let mut b1 = cipher_block_itr.next();
+    let mut b2 = cipher_block_itr.next();
 
-    let mut last = false;
-    while ! last {
-        if b1 == None {
-            b1 = b2;
-            last = true;
-        }
-
+    while b1 != None && b2 != None {
         let b12 = rawjoin!(b1.unwrap().into_iter(), b2.unwrap().into_iter());
-        println!("b12 len: {}", b12.len());
+        //println!("b12 len: {}", b12.len());
 
         let plain_block = try!(break_last_block(&obox, &b12, blocksize));
-        println!("plain block: {}", rts!(&plain_block));
+        //println!("plain block: {}", rts!(&plain_block));
         plain.extend(&plain_block);
 
-        b2 = b1;
-        b1 = cipher_block_itr.next();
+        b1 = b2;
+        b2 = cipher_block_itr.next();
     }
+
     Ok(rts!(&try!(padding::pkcs7_unpad(&plain, blocksize))))
 }
 
@@ -99,7 +96,7 @@ fn break_last_block(obox: &OBox, cipher: &Vec<u8>, blocksize: usize) -> Result<V
     ctry!(cipher.len() < blocksize * 2, "need at least two blocks of cipher (real or made up) to break the last block");
 
     let mut byte_index = blocksize - 1;
-    let mut padsize = blocksize - byte_index;
+    let mut padsize = 1;
     let mut plain_rev = Vec::<u8>::new();
 
     let mut block_iter = cipher.chunks(blocksize).rev();
@@ -119,7 +116,7 @@ fn break_last_block(obox: &OBox, cipher: &Vec<u8>, blocksize: usize) -> Result<V
             match try!(obox.decrypt(&rawjoin!(b1.into_iter(), last_block.clone().into_iter()))) {
                 true  => { 
                     plain_rev.push(guess);
-                    //print!("guessed right {} ", chr!(guess));
+                    println!("guessed right {} ", (guess));
                     if byte_index > 0 {
                         byte_index -= 1;
                         padsize += 1;
@@ -143,8 +140,8 @@ pub fn interactive() -> err::ExitCode {
 
     match break_cbc(&obox) {
         Ok(v)  => { match obox.string_valid(&v) {
-            true  => println!("\nsuccess !!"),
-            false => println!("\nfailed :(")
+            true  => println!("{}\nsuccess !!", v),
+            false => println!("{}\nfailed :(", v)
         };
         exit_ok!() },
 

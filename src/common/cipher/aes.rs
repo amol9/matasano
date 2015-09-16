@@ -3,6 +3,9 @@ use self::crypto::{symmetriccipher, buffer, aes, blockmodes};
 use self::crypto::symmetriccipher::Decryptor;
 use self::crypto::buffer::{ReadBuffer, WriteBuffer, BufferResult};
 
+extern crate rand;
+use self::rand::Rng;
+
 use common::{err, xor};
 use common::cipher::padding;
 
@@ -133,7 +136,9 @@ pub fn encrypt_cbc(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8
     let mut block_cipher = try!(iv(&key, &mode));
     let mut input_iter = input.chunks(mode.blocksize);
     let last_block = input.chunks(mode.blocksize).next_back().unwrap();
+
     let mut output = Vec::<u8>::new();
+    output.extend(&block_cipher);
 
     for block in input_iter {
         let block_v = block.to_vec();
@@ -152,17 +157,20 @@ pub fn encrypt_cbc(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8
 
 
 pub fn iv(key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, err::Error> {
-    let iv: Vec<u8> = vec![0; mode.blocksize];
-    encrypt_ecb(&iv, &key, &mode)
+    let mut rng = rand::thread_rng();
+    let iv: Vec<u8> = (0 .. mode.blocksize).map(|_| rng.gen::<u8>()).collect();
+    Ok(iv)
 }
 
 
 pub fn decrypt_cbc(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, err::Error> {
-    let mut block_cipher = try!(iv(&key, &mode));
     let mut output = Vec::<u8>::new();
     let last_block = input.chunks(mode.blocksize).next_back().unwrap();
 
-    for block in input.chunks(mode.blocksize) {
+    let mut block_it = input.chunks(mode.blocksize);
+    let mut block_cipher = block_it.next().unwrap().to_vec();
+
+    for block in block_it {
         let block_v = block.to_vec();
 
         let mut block_plain = try!(xor::xor(&block_cipher, &try!(decrypt_ecb(&block_v, &key, &mode))));
