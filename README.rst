@@ -10,6 +10,7 @@ Progress
 
 * Set 1: complete (01-08)
 * Set 2: complete (09-16)
+* Set 3: 17
 
 
 Platform
