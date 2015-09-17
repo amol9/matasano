@@ -41,7 +41,6 @@ impl CipherBox {
 
         data.extend(input);
         data.extend(&self.target_data);
-        println!("enc plain data of len: {}", data.len());
         aes::encrypt(&data, &self.key, &self.mode)
     }
 
@@ -54,6 +53,10 @@ impl CipherBox {
 
     pub fn decrypt(&self, cipher: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
         aes::decrypt(&cipher, &self.key, &self.mode)
+    }
+
+    pub fn blocksize(&self) -> usize {
+        self.mode.blocksize
     }
 }
 

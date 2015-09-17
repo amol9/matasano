@@ -92,7 +92,7 @@ pub fn auth_as_admin(authbox: &AuthBox) -> Result<bool, err::Error> {
 
     let userdata = strjoin!(&padstr, &chr!(';' as u8 ^ 1).to_string(), "admin", &chr!('=' as u8 ^ 1).to_string(), "true");
 
-    let flip_idx1 = len1 + padsize - blocksize; 
+    let flip_idx1 = len1 + padsize; 
     let flip_idx2 = flip_idx1 + "admin=".len();
 
     let mut cipher = try!(authbox.submit(&comment1, &userdata, &comment2));

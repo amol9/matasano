@@ -1,3 +1,4 @@
+use std::env;
 
 extern crate rand;
 use self::rand::Rng;
@@ -10,7 +11,7 @@ use common::cipher::{aes, key, padding};
 pub static info: challenge::Info = challenge::Info {
     no:         17,
     title:      "The CBC padding oracle",
-    help:       "",
+    help:       "param1 (optional): number of trials (default = 1)",
     execute_fn: interactive
 };
 
@@ -47,9 +48,9 @@ impl OBox {
     }
 
 
-    fn decrypt(&self, cipher: &Vec<u8>) -> Result<bool, err::Error> {
+    fn dec_oracle(&self, cipher: &Vec<u8>) -> Result<bool, err::Error> {
         match self.cbox.decrypt(&cipher) {
-            Ok(v)  => Ok((v.len() + 16) != cipher.len()),
+            Ok(v)  => Ok((v.len() + self.cbox.blocksize()) != cipher.len()),
             Err(e) => match e.errtype {
                 err::Type::Padding  => Ok(false),
                 _                   => Err(e)
@@ -68,8 +69,6 @@ pub fn break_cbc(obox: &OBox) -> Result<String, err::Error> {
     let blocksize = 16;
 
     let cipher = try!(obox.get_cipher());
-    println!("cipher len: {}", cipher.len());
-
     let mut plain = Vec::<u8>::new();
 
     let mut cipher_block_itr = cipher.chunks(blocksize);
@@ -78,11 +77,9 @@ pub fn break_cbc(obox: &OBox) -> Result<String, err::Error> {
 
     while b1 != None && b2 != None {
         let b12 = rawjoin!(b1.unwrap().into_iter(), b2.unwrap().into_iter());
-        //println!("b12 len: {}", b12.len());
 
-        let plain_block = try!(break_last_block(&obox, &b12, blocksize));
-        //println!("plain block: {}", rts!(&plain_block));
-        plain.extend(&plain_block);
+        let plain_block = try!(break_last_block(&obox, &b12, blocksize));       // break one block at a time
+        plain.extend(&plain_block);                                             // by sending it with its predecessor
 
         b1 = b2;
         b2 = cipher_block_itr.next();
@@ -92,6 +89,8 @@ pub fn break_cbc(obox: &OBox) -> Result<String, err::Error> {
 }
 
 
+// algorithm reference: https://en.wikipedia.org/wiki/Padding_oracle_attack
+//
 fn break_last_block(obox: &OBox, cipher: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Error> {
     ctry!(cipher.len() < blocksize * 2, "need at least two blocks of cipher (real or made up) to break the last block");
 
@@ -113,10 +112,16 @@ fn break_last_block(obox: &OBox, cipher: &Vec<u8>, blocksize: usize) -> Result<V
 
             b1[byte_index] ^= guess ^ padsize as u8;
 
-            match try!(obox.decrypt(&rawjoin!(b1.into_iter(), last_block.clone().into_iter()))) {
+            if padsize == 1 {                   // step needed for actually padded blocks
+                for i in 0 .. byte_index {      // e.g. if actual padding is 4 and by some chance, our guess results in last byte = 4,
+                    b1[i] ^= 128;               // instead of 1, padding oracle returns true and we guess wrong
+                }                               // so, we flip the highest bit of each of the preceding
+            }                                   // bytes so that even if we get last byte = 4, most of the
+                                                // bytes previous to it will be >127
+                                                
+            match try!(obox.dec_oracle(&rawjoin!(b1.into_iter(), last_block.clone().into_iter()))) {
                 true  => { 
                     plain_rev.push(guess);
-                    println!("guessed right {} ", (guess));
                     if byte_index > 0 {
                         byte_index -= 1;
                         padsize += 1;
@@ -125,11 +130,7 @@ fn break_last_block(obox: &OBox, cipher: &Vec<u8>, blocksize: usize) -> Result<V
                 },
                 false => {}
             };
-            if guess == 127 {
-                println!("guess failed for byte: {}", blocksize - 1 - i);
-            }
         }
-        //println!("byte: {}", blocksize - 1 - i);
     }
     Ok(plain_rev.iter().rev().cloned().collect())
 }
@@ -138,15 +139,20 @@ fn break_last_block(obox: &OBox, cipher: &Vec<u8>, blocksize: usize) -> Result<V
 pub fn interactive() -> err::ExitCode {
     let obox = rtry!(OBox::new(), exit_err!());
 
-    match break_cbc(&obox) {
-        Ok(v)  => { match obox.string_valid(&v) {
-            true  => println!("{}\nsuccess !!", v),
-            false => println!("{}\nfailed :(", v)
-        };
-        exit_ok!() },
+    let n = match env::args().nth(2) {
+        Some(v) => rtry!(v.parse::<usize>(), exit_err!()),
+        None    => 1
+    };
 
-        Err(e) => { println!("{}", e);
-        exit_err!() }
+    for _ in 0 .. n {
+        match break_cbc(&obox) {
+            Ok(v)  => match obox.string_valid(&v) {
+                true  => println!("{} : success!!", v),
+                false => println!("{} : failed:(", v)
+            },
+            Err(e) => println!("{}", e)
+        }
     }
+    exit_ok!()
 }
 
