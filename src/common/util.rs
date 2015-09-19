@@ -60,6 +60,21 @@ macro_rules! input {
         rtry!(io::stdout().flush(), 1);
         io::stdin().read_line($str);
     );
+    
+    ( $msg: expr, $str: expr, $default: expr ) => ( 
+        {
+            print!("{} [{}]: ", $msg, $default);
+            rtry!(io::stdout().flush(), 1);
+            let r = io::stdin().read_line($str);
+            match r {
+                Ok(n)  => if n == 1 {
+                    (*$str).clear();
+                    (*$str).push_str($default)
+                },
+                Err(e) => {}
+            };
+        }
+    );
 }
 
 

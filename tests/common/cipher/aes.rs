@@ -49,3 +49,4 @@ fn test_cbc_128_pkcs7() {
     test_enc_dec("this is test message of length 33.", "YELLOW SUBMARINE");
     test_enc_dec("hello", "YELLOW SUBMARINE");
 }
+

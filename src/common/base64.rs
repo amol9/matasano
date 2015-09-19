@@ -157,3 +157,8 @@ pub fn hex_to_base64(input: &str) -> Result<String, err::Error> {
 	}
 }
 
+
+macro_rules! b64d {
+    ( $x : expr ) => ( try! ( base64::base64_to_raw( $x ) ) );
+}
+
