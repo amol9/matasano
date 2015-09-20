@@ -55,15 +55,6 @@ pub const ecb_128_pkcs7: Mode = Mode {
 };
 
 
-pub const ecb_128_no_padding: Mode = Mode {
-    keysize:    aes::KeySize::KeySize128,
-    blocksize:  16,
-    padding:    padding::NoPadding,
-    cipher:     Ecb,
-    blockmode:  BlockMode::ecb
-};
-
-
 pub const cbc_128_pkcs7: Mode = Mode {
     keysize:    aes::KeySize::KeySize128,
     blocksize:  16,

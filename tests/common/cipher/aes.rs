@@ -8,45 +8,119 @@ enum Op {
     decrypt
 }
 
-
-fn encdec(input: &str, key: &str, olen: usize, op: Op) -> Option<String> {
-    let ir = rn!(ascii::str_to_raw(&input));
-    let kr = rn!(ascii::str_to_raw(&key));
-    let or: Vec<u8>;
-
-    match op {
-        Op::encrypt => or = rn!(aes::encrypt(&ir, &kr, &aes::cbc_128_pkcs7)),
-        Op::decrypt => or = rn!(aes::decrypt(&ir, &kr, &aes::cbc_128_pkcs7)),
-    };
-
-    assert!(or != ir);
-    assert_eq!(or.len(), olen);
-    println!("{}", rn!(ascii::raw_to_str(&or)));
-    Some(rn!(ascii::raw_to_str(&or)))
+enum Mode {
+    ecb,
+    cbc,
+    ctr
 }
 
 
-fn test_enc(input: &str, key: &str, olen: usize) -> String {
-    encdec(&input, &key, olen, Op::encrypt).unwrap()
+struct Test {
+    mode:       Mode,
+    blocksize:  usize
 }
 
 
-fn test_dec(input: &str, key: &str, olen: usize) -> String {
-    encdec(&input, &key, olen, Op::decrypt).unwrap()
-}
+impl Test {
+    fn new(mode: Mode) -> Self {
+        Test { 
+            mode:       mode,
+            blocksize:  16
+        }
+    }
 
 
-fn test_enc_dec(plain: &str, key: &str) {
-    let cipher: String;
+    fn encdec(&self, input: &str, key: &str, op: Op) -> Option<String> {
+        let ir = rn!(ascii::str_to_raw(&input));
+        let kr = rn!(ascii::str_to_raw(&key));
+        let or: Vec<u8>;
+        let olen: usize;
 
-    cipher = test_enc(&plain, &key, (plain.len() as f32 / 16f32).ceil() as usize * 16 + 16);
-    test_dec(&cipher, &key, plain.len());
+        match self.mode {
+            Mode::ecb | Mode::cbc => {
+                let mode = match self.mode {
+                    Mode::ecb => {
+                        olen = (input.len() as f32 / self.blocksize as f32).ceil() as usize * self.blocksize;
+                        aes::ecb_128_pkcs7
+                    },
+                    Mode::cbc => {                                                                          // + iv length           
+                        olen = (input.len() as f32 / self.blocksize as f32).ceil() as usize * self.blocksize + self.blocksize; 
+                        aes::cbc_128_pkcs7
+                    },
+                    _         => unreachable!()
+                };
+
+                match op {
+                    Op::encrypt => or = rn!(aes::encrypt(&ir, &kr, &mode)),
+                    Op::decrypt => or = rn!(aes::decrypt(&ir, &kr, &mode)),
+                };
+            },
+
+            Mode::ctr => {
+                let mut ctr = aes::CTR::new(&kr, 0);
+                or = rn!(ctr.gen(&ir));
+                olen = input.len();
+            }
+        };
+
+        assert!((ir.len() == 0 && or.len() == 0) || or != ir);
+        match op {
+            Op::encrypt => assert_eq!(or.len(), olen),
+            Op::decrypt => assert!(or.len() <= input.len())
+        }
+
+        println!("{}", rn!(ascii::raw_to_str(&or)));
+        Some(rn!(ascii::raw_to_str(&or)))
+    }
+
+
+    fn enc(&self, input: &str, key: &str) -> String {
+        self.encdec(&input, &key, Op::encrypt).unwrap()
+    }
+
+
+    fn dec(&self, input: &str, key: &str) -> String {
+        self.encdec(&input, &key, Op::decrypt).unwrap()
+    }
+
+
+    fn enc_dec(&self, plain: &str, key: &str) {
+        let cipher: String;
+
+        cipher = self.enc(&plain, &key);
+        assert_eq!(self.dec(&cipher, &key), plain)
+    }
 }
 
 
 #[test]
 fn test_cbc_128_pkcs7() {
-    test_enc_dec("this is test message of length 33.", "YELLOW SUBMARINE");
-    test_enc_dec("hello", "YELLOW SUBMARINE");
+    let test = Test::new(Mode::cbc);
+
+    test.enc_dec("this is test message of length 33.", "YELLOW SUBMARINE");
+    test.enc_dec("hello", "YELLOW SUBMARINE");
+    test.enc_dec("a", "YELLOW SUBMARINE");
+}
+
+
+#[test]
+fn test_ecb_128_pkcs7() {
+    let test = Test::new(Mode::ecb);
+
+    test.enc_dec("this is test message of length 33.", "YELLOW SUBMARINE");
+    test.enc_dec("hello", "YELLOW SUBMARINE");
+    test.enc_dec("a", "YELLOW SUBMARINE");
+    //test.enc_dec("", "YELLOW SUBMARINE");
+}
+
+
+#[test]
+fn test_ctr() {
+    let test = Test::new(Mode::ctr);
+
+    test.enc_dec("this is test message of length 33.", "YELLOW SUBMARINE");
+    test.enc_dec("hello", "YELLOW SUBMARINE");
+    test.enc_dec("a", "YELLOW SUBMARINE");
+    test.enc_dec("", "YELLOW SUBMARINE");
 }
 
