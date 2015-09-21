@@ -30,6 +30,13 @@ const Cbc: Cipher = Cipher {
     decrypt_fn: decrypt_cbc
 };
 
+
+const Ctr: Cipher = Cipher {
+    encrypt_fn: edcrypt_ctr,
+    decrypt_fn: edcrypt_ctr
+};
+
+
 #[derive(PartialEq)]
 pub enum BlockMode {
     ecb,
@@ -38,39 +45,76 @@ pub enum BlockMode {
 
 
 pub struct Mode {
-    pub keysize:        aes::KeySize,
-    pub blocksize:      usize,
-    pub padding:        padding::Mode,
+    pub keysize:        Option<aes::KeySize>,
+    pub blocksize:      Option<usize>,
+    pub padding:        Option<padding::Mode>,
     pub cipher:         Cipher,
-    pub blockmode:      BlockMode,
+    pub blockmode:      Option<BlockMode>,
+}
+
+
+impl Mode {
+    fn pad(&self, input: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
+        match self.padding {
+            Some(ref p) => (p.pad_fn)(&input, self.blocksize.unwrap()),
+            None        => mkerr!("no padding is defined for this mode")
+        }
+    }
+
+
+    fn unpad(&self, input: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
+        match self.padding {
+            Some(ref p) => (p.unpad_fn)(&input, self.blocksize.unwrap()),
+            None        => mkerr!("no padding is defined for this mode")
+        }
+    }
+
+
+    fn encrypt(&self, input: &Vec<u8>, key: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
+        (self.cipher.encrypt_fn)(&input, &key, &self)
+    }
+
+
+    fn decrypt(&self, input: &Vec<u8>, key: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
+        (self.cipher.decrypt_fn)(&input, &key, &self)
+    }
 }
 
 
 pub const ecb_128_pkcs7: Mode = Mode {
-    keysize:    aes::KeySize::KeySize128,
-    blocksize:  16,
-    padding:    padding::Pkcs7,
+    keysize:    Some(aes::KeySize::KeySize128),
+    blocksize:  Some(16),
+    padding:    Some(padding::Pkcs7),
     cipher:     Ecb,
-    blockmode:  BlockMode::ecb
+    blockmode:  Some(BlockMode::ecb)
 };
 
 
 pub const cbc_128_pkcs7: Mode = Mode {
-    keysize:    aes::KeySize::KeySize128,
-    blocksize:  16,
-    padding:    padding::Pkcs7,
+    keysize:    Some(aes::KeySize::KeySize128),
+    blocksize:  Some(16),
+    padding:    Some(padding::Pkcs7),
     cipher:     Cbc,
-    blockmode:  BlockMode::cbc
+    blockmode:  Some(BlockMode::cbc)
+};
+
+
+pub const ctr_128: Mode = Mode {
+    keysize:    None,
+    blocksize:  None,
+    padding:    None,
+    cipher:     Ctr,
+    blockmode:  None
 };
 
 
 pub fn encrypt(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, err::Error> {
     let mut result: Vec<u8>;
-    if mode.blockmode == BlockMode::ecb {
-        let plain = try!((mode.padding.pad_fn)(&input, mode.blocksize));
-        result = try!((mode.cipher.encrypt_fn)(&plain, &key, &mode));
+    if mode.blockmode == Some(BlockMode::ecb) {
+        let padded = try!(mode.pad(&input));
+        result = try!(mode.encrypt(&padded, &key));
     } else {
-        result = try!((mode.cipher.encrypt_fn)(&input, &key, &mode));
+        result = try!(mode.encrypt(&input, &key));
     }
     Ok(result)
 
@@ -78,16 +122,16 @@ pub fn encrypt(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, e
 
 
 pub fn decrypt(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, err::Error> {
-    let result = try!((mode.cipher.decrypt_fn)(input, key, mode));
-    if mode.blockmode == BlockMode::ecb {
-        return (mode.padding.unpad_fn)(&result, mode.blocksize);
+    let result = try!(mode.decrypt(input, key));
+    if mode.blockmode == Some(BlockMode::ecb) {
+        return mode.unpad(&result);
     }
     Ok(result)
 }
 
 
 pub fn encrypt_ecb(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, err::Error> {
-     let mut encryptor = aes::ecb_encryptor(mode.keysize, key, blockmodes::NoPadding);
+     let mut encryptor = aes::ecb_encryptor(mode.keysize.unwrap(), key, blockmodes::NoPadding);
 
         let mut output = Vec::<u8>::new();
         let mut read_buffer = buffer::RefReadBuffer::new(input);
@@ -111,7 +155,7 @@ pub fn encrypt_ecb(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8
 
 
 pub fn decrypt_ecb(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, err::Error> {
-    let mut decryptor = aes::ecb_decryptor(mode.keysize, key, blockmodes::NoPadding);
+    let mut decryptor = aes::ecb_decryptor(mode.keysize.unwrap(), key, blockmodes::NoPadding);
 
         let mut output = Vec::<u8>::new();
         let mut read_buffer = buffer::RefReadBuffer::new(input);
@@ -130,15 +174,14 @@ pub fn decrypt_ecb(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8
                 BufferResult::BufferOverflow => { }
             }
         }
-        //output = try!((mode.padding.unpad_fn)(&output, mode.blocksize));
         Ok(output)
 }
 
 
 pub fn encrypt_cbc(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, err::Error> {
     let mut block_cipher = try!(iv(&key, &mode));
-    let mut input_iter = input.chunks(mode.blocksize);
-    let last_block = input.chunks(mode.blocksize).next_back().unwrap();
+    let mut input_iter = input.chunks(mode.blocksize.unwrap());
+    let last_block = input.chunks(mode.blocksize.unwrap()).next_back().unwrap();
 
     let mut output = Vec::<u8>::new();
     output.extend(&block_cipher);
@@ -147,7 +190,7 @@ pub fn encrypt_cbc(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8
         let block_v = block.to_vec();
 
         if block_v == last_block {
-           let last = try!((mode.padding.pad_fn)(&block_v, mode.blocksize));
+           let last = try!(mode.pad(&block_v));
            block_cipher = try!(encrypt_ecb(&try!(xor::xor(&last, &block_cipher)), &key, &mode));
         } else {
            block_cipher = try!(encrypt_ecb(&try!(xor::xor(&block_v, &block_cipher)), &key, &mode));
@@ -161,16 +204,16 @@ pub fn encrypt_cbc(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8
 
 pub fn iv(key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, err::Error> {
     let mut rng = rand::thread_rng();
-    let iv: Vec<u8> = (0 .. mode.blocksize).map(|_| rng.gen::<u8>()).collect();
+    let iv: Vec<u8> = (0 .. mode.blocksize.unwrap()).map(|_| rng.gen::<u8>()).collect();
     Ok(iv)
 }
 
 
 pub fn decrypt_cbc(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, err::Error> {
     let mut output = Vec::<u8>::new();
-    let last_block = input.chunks(mode.blocksize).next_back().unwrap();
+    let last_block = input.chunks(mode.blocksize.unwrap()).next_back().unwrap();
 
-    let mut block_it = input.chunks(mode.blocksize);
+    let mut block_it = input.chunks(mode.blocksize.unwrap());
     let mut block_cipher = block_it.next().unwrap().to_vec();
 
     for block in block_it {
@@ -178,7 +221,7 @@ pub fn decrypt_cbc(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8
 
         let mut block_plain = try!(xor::xor(&block_cipher, &try!(decrypt_ecb(&block_v, &key, &mode))));
         if block == last_block {
-            block_plain = try!((mode.padding.unpad_fn)(&block_plain, mode.blocksize));
+            block_plain = try!(mode.unpad(&block_plain));
         }
         output.extend(&block_plain);
         block_cipher = block_v;
@@ -237,7 +280,7 @@ impl CTR {
         {
             let mut state = self.state.borrow_mut();
 
-            if state.keystream.len() > 0 && state.key_idx < self.mode.blocksize {
+            if state.keystream.len() > 0 && state.key_idx < self.mode.blocksize.unwrap() {
                 let k = state.keystream[state.key_idx];
                 state.key_idx += 1;
                 return Ok(k);
@@ -251,5 +294,11 @@ impl CTR {
        
         self.next_ks_byte()
     }
+}
+
+
+pub fn edcrypt_ctr(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, err::Error> {
+    let mut ctr = CTR::new(&key, 0);
+    ctr.gen(&input)
 }
 

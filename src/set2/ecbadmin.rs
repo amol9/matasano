@@ -59,7 +59,7 @@ impl AuthBox {
     fn new() -> Result<Self, err::Error> {
         let mode = aes::ecb_128_pkcs7;
         Ok(AuthBox {
-            key:    try!(key::random(mode.blocksize)),
+            key:    try!(key::random(mode.blocksize.unwrap())),
             mode:   mode
         })
     }

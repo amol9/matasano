@@ -36,7 +36,7 @@ impl AuthBox {
         }
 
         Ok(AuthBox {
-            key:        try!(key::random(mode.blocksize)),
+            key:        try!(key::random(mode.blocksize.unwrap())),
             mode:       mode,
             escape_map: escape_map
         })

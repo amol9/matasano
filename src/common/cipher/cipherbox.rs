@@ -18,7 +18,9 @@ pub struct CipherBox {
 impl CipherBox {
     pub fn new(target_data: &Vec<u8>, mode: aes::Mode) -> Result<Self, err::Error> {
         Ok(CipherBox {
-            key:            try!(key::random(mode.blocksize)),
+            key:            try!(key::random(match mode.blocksize {
+                                                Some(v) => v,
+                                                None    => 16})),
             target_data:    target_data.clone(),
             mode:           mode,
             random_prefix:  false,
@@ -56,7 +58,7 @@ impl CipherBox {
     }
 
     pub fn blocksize(&self) -> usize {
-        self.mode.blocksize
+        self.mode.blocksize.unwrap()
     }
 }
 

@@ -24,7 +24,7 @@ pub fn gen_cipher(input: &Vec<u8>, mode: &aes::Mode) -> Result<Vec<u8>, err::Err
     r_input.extend(input);
     r_input.extend(&rand_data());
 
-    let key = try!(key::random(mode.blocksize));
+    let key = try!(key::random(mode.blocksize.unwrap()));
 
     aes::encrypt(&r_input, &key, &mode)
 }
@@ -45,7 +45,7 @@ pub fn detect_aes_mode(sample_count: usize) -> Result<(usize, usize), err::Error
         let cipher = try!(gen_cipher(&input, &mode));
 
         let d_mode: aes::Mode;
-        if try!(oracle::detect_aes_ecb(&cipher, mode.blocksize)) {
+        if try!(oracle::detect_aes_ecb(&cipher, mode.blocksize.unwrap())) {
             d_mode = aes::ecb_128_pkcs7;
         } else {
             d_mode = aes::cbc_128_pkcs7;
