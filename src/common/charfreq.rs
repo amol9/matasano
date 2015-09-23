@@ -96,3 +96,12 @@ pub fn i_generate_base_frequency_file() -> err::ExitCode {
 }
 
 
+pub const trigrams: [&'static str; 16] = ["the", "and", "tha", "ent", "ing", "ion", "tio", "for", "nde",
+                                            "has", "nce", "edt", "tis", "oft", "sth", "men"];
+
+
+pub fn trigrams_col(col: usize) -> Result<Vec<u8>, err::Error> {
+    ctry!(col > 2, "trigrams valid columns are 0, 1 and 2");
+    Ok(trigrams.iter().map(|&t| t.bytes().nth(col).unwrap()).collect())
+}
+

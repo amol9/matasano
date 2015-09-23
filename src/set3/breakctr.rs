@@ -1,5 +1,6 @@
 use std::env;
 use std::slice;
+use std::clone;
 
 use common::{err, challenge, ascii, base64, util, charfreq};
 use common::cipher::aes;
@@ -40,6 +41,88 @@ pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
     }
 
     Ok(xor_keystream(&ciphers, &keystream))
+}
+
+// detect trigrams
+// return:
+// 1. a vector of size = max cipher length
+//    with 0, 1 or 2 to indicate trigram character column in each position
+//    3: no trigram detected in that position
+// 2. a vector of size = max cipher length
+//    with trigram bytes (cipher) if detected in that position
+//    else: 0
+//
+pub fn detect_trigrams(ciphers: &Vec<Vec<u8>>) -> (Vec<usize>, Vec<u8>) {
+    let mut cipher_its: Vec<slice::Iter<u8>> = Vec::new();
+    for c in ciphers {
+        cipher_its.push(c.iter());
+    }
+
+    let mut result_i = Vec::<usize>::new();
+    let mut result_c = Vec::<u8>::new();
+
+    let mut buf = Vec::<Vec<u8>>::new();
+    for _ in 0 .. ciphers.len() {
+        buf.push(vec![0; 3]);
+    }
+
+    let mut idx = 0;
+    let mut all_ciphers_done = false;
+
+    while ! all_ciphers_done {
+        {
+            let mut buf_it = buf.iter_mut();
+            all_ciphers_done = true;
+
+            for it in cipher_its.iter_mut() {
+                let c = match it.next() {
+                    Some(v) => { all_ciphers_done = false; v },
+                    None    => { let mut b = buf_it.next().unwrap(); b.clear(); continue; }
+                };
+
+                let t = buf_it.next().unwrap();
+                t[0] = t[1]; t[1] = t[2]; t[2] = *c;
+                println!("{}", ascii::raw_to_str(&t).unwrap());
+            }
+        }
+
+        if all_ciphers_done {
+            break;
+        }
+
+        println!("-");
+        result_i.push(3);
+        result_c.push(0);
+
+        if idx >= 2 {
+            let trigrams_left = buf.iter().filter(|t| t.len() != 0).count() > 1;
+
+            if trigrams_left {
+                let mut found_dup = false;
+
+                for i in 0 .. buf.len() {
+                    for j in (i + 1) .. buf.len() {
+                        if buf[i].len() !=0 && buf[j].len()!= 0 && buf[i] == buf[j] {
+                            println!("dup found {}", ascii::raw_to_str(&buf[i]).unwrap());
+                            result_i[idx - 2] = 0; result_c[idx - 2] = buf[i][0];
+                            result_i[idx - 1] = 1; result_c[idx - 1] = buf[i][1];
+                            result_i[idx]     = 2; result_c[idx]     = buf[i][2];
+
+                            found_dup = true;
+                            break;
+                        }
+                    }
+                    if found_dup {
+                        break;
+                    }
+                }
+            } else {
+                all_ciphers_done = true;
+            }
+        }        
+        idx += 1;
+    }
+    (result_i, result_c)
 }
 
 
