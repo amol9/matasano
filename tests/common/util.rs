@@ -55,3 +55,12 @@ fn test_transpose_str() {
     let input = s!("abcdabcdabcdabcdabc");
     assert_eq!(m!(util::transpose_str(&input, 4)), vec![s!("aaaaa"), s!("bbbbb"), s!("ccccc"), s!("dddd")]);
 }
+
+
+#[test]
+fn test_dup() {
+    assert_eq!(util::dup::<u32>(&vec![1, 2, 1, 3, 4]), vec![(1, 2)]);
+    assert_eq!(util::dup::<u32>(&vec![1, 2, 1, 3, 4]), vec![(1, 2)]);
+    assert_eq!(util::dup::<u32>(&vec![1, 2, 1, 3, 4, 2, 2]), vec![(1, 2), (2, 3)]);
+}
+

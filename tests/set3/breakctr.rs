@@ -13,7 +13,9 @@ fn test_detect_trigrams() {
     let input: Vec<Vec<u8>> = vec![raw!("abcfeoowoptpeefs"),
                                 raw!("abcrklsriwewfks"),
                                 raw!("ab"),
-                                raw!("dgrdkls")];
+                                raw!("dgrdkls"),
+                                raw!("wer423jfsds"),
+                                raw!("wert4gwew")];
 
     let input_max_len: usize = *input.iter().map(|i| i.len()).collect::<Vec<usize>>().iter().max().unwrap();
 
@@ -21,5 +23,5 @@ fn test_detect_trigrams() {
 
     assert_eq!(result_i.len(), input_max_len);
     assert!(result_i.starts_with(&[0, 1, 2, 3, 0, 1, 2]));
-    assert!(result_c.starts_with(&raw!("abc\x00kls")));
+    assert!(result_c.starts_with(&[raw!("aw"), raw!("be"), raw!("cr"), vec![], raw!("k"), raw!("l"), raw!("s")]));
 }

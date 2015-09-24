@@ -157,3 +157,35 @@ macro_rules! printc {
         io::stdout().flush(); );
 }
 
+
+pub fn dup<T>(input: &Vec<T>) -> Vec<(T, usize)> where T: PartialEq + Clone  {
+    let mut result = Vec::<(T, usize)>::new();
+
+    //let cmp = &f.unwrap();
+    //let cmp = match f {
+    //    Some(v) => v,
+    //    None    => cmp_default 
+    //};
+
+    for i in 0 .. input.len() {
+        let dup_already_found: bool = result.iter().any(|t| t.0 == input[i]);
+        if dup_already_found {
+            continue
+        }
+
+        for j in (i + 1) .. input.len() {
+            if input[i] == input[j] {
+                let dup_already_found: bool = result.iter().any(|t| t.0 == input[i]);
+
+                if ! dup_already_found {
+                    result.push((input[i].clone(), 2));
+                } else {
+                    let dt: Option<&mut (T, usize)> = result.iter_mut().find(|t| t.0 == input[i]);
+                    dt.unwrap().1 += 1;
+                }
+            }
+        }
+    }
+    result
+}
+
