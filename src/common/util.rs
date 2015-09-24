@@ -189,3 +189,25 @@ pub fn dup<T>(input: &Vec<T>) -> Vec<(T, usize)> where T: PartialEq + Clone  {
     result
 }
 
+
+pub fn freq<T>(input: &Vec<T>) -> Vec<(T, usize)> where T: PartialEq + Clone  {
+    let mut result = Vec::<(T, usize)>::new();
+
+    for i in 0 .. input.len() {
+        let already_found: bool = result.iter().any(|t| t.0 == input[i]);
+        if ! already_found {
+            result.push((input[i].clone(), 1));
+        } else {
+            continue
+        }
+
+        for j in (i + 1) .. input.len() {
+            if input[i] == input[j] {
+                let dt: Option<&mut (T, usize)> = result.iter_mut().find(|t| t.0 == input[i]);
+                dt.unwrap().1 += 1;
+            }
+        }
+    }
+    result
+}
+

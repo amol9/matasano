@@ -29,7 +29,12 @@ pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
     let mut tri_c_it = tri_c.iter();
 
     let mut all_ciphers_done = false;
+    let mut col_no = 0;
+
     while !all_ciphers_done {
+        println!("col no: {}", col_no);
+        col_no += 1;
+
         let mut col = Vec::<u8>::new();
         for it in cipher_its.iter_mut() {
             match it.next() {
@@ -40,10 +45,13 @@ pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
 
         if col.len() > 0 {
             let mut candidates = Vec::<u8>::new();
-            let tidx = *tri_idx_it.next().unwrap();
-            let tc = tri_c_it.next().unwrap();
+            let tidx = match tri_idx_it.next() {
+                Some(v) => *v,
+                None    => 3
+            };
 
             if tidx < 3 {
+                let tc = tri_c_it.next().unwrap();
                 candidates = try!(narrow_candidates(tidx, &tc));
                 //candidates = tcol.iter().map(|c| c ^ tc[0]).collect();
             }
@@ -60,22 +68,27 @@ pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
 
 fn narrow_candidates(col: usize, c: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
     let tri_col = try!(charfreq::trigrams_col(col));
+    let result: Vec<u8>;
 
     if c.len() == 1 {
-        return Ok(tri_col.iter().map(|tc| tc ^ c[0]).collect());
+        result = tri_col.iter().map(|tc| tc ^ c[0]).collect();
+    } else {
+
+        let mut r = Vec::<u8>::new();
+
+        let c_dups = util::freq(&c);
+        let t_dups = util::freq(&tri_col);
+
+        for dup in c_dups.iter() {
+            let f = t_dups.iter().filter(|td| td.1 >= dup.1);
+            let n: Vec<u8> = f.map(|c| c.0 ^ dup.0).collect();
+            r.extend(&n);
+        }
+
+        result = util::freq(&r).iter().filter(|t| t.1 >= c_dups.len()).map(|t| t.0).collect();
     }
 
-    let mut result = Vec::<u8>::new();
-
-    let c_dups = util::dup(&c);
-    let t_dups = util::dup(&tri_col);
-
-    for dup in c_dups {
-        let f = t_dups.iter().filter(|td| td.1 >= dup.1);
-        let n: Vec<u8> = f.map(|c| c.0 ^ dup.0).collect();
-        result.extend(&n);
-    }
-
+    println!("candidates: {}", rawd!(&result));
     Ok(result)
 }
 
@@ -118,7 +131,7 @@ pub fn detect_trigrams(ciphers: &Vec<Vec<u8>>) -> (Vec<usize>, Vec<Vec<u8>>) {
 
                 let t = buf_it.next().unwrap();
                 t[0] = t[1]; t[1] = t[2]; t[2] = *c;
-                println!("{}", ascii::raw_to_str(&t).unwrap());
+                //println!("{}", ascii::raw_to_str(&t).unwrap());
             }
         }
 
@@ -138,6 +151,7 @@ pub fn detect_trigrams(ciphers: &Vec<Vec<u8>>) -> (Vec<usize>, Vec<Vec<u8>>) {
 
                 for dup in dups {
                     if dup.0.len() != 0 {
+                        println!("dup: {}, {}", ascii::raw_to_str(&dup.0).unwrap(), dup.1);
                         result_i[idx - 2] = 0; result_c[idx - 2].push(dup.0[0]);
                         result_i[idx - 1] = 1; result_c[idx - 1].push(dup.0[1]);
                         result_i[idx]     = 2; result_c[idx].push(dup.0[2]);
@@ -165,12 +179,11 @@ fn xor_keystream(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>) -> Vec<String> {
 
 fn break_column(col: &Vec<u8>, candidates: &Vec<u8>) -> Result<u8, err::Error> {
     let mut dist = Vec::<f32>::new();
-    let keys: Vec<u8>;
+    let mut keys: Vec<u8>;
 
     if candidates.len() == 0 {
-        println!("no candidates");
         keys = (0 .. 255).collect();
-        println!("keys len: {}", keys.len());
+        keys.push(255);
     } else {
         keys = candidates.iter().cloned().collect();
     }
@@ -183,12 +196,11 @@ fn break_column(col: &Vec<u8>, candidates: &Vec<u8>) -> Result<u8, err::Error> {
     //let keys = util::min_indices(&dist, 30).unwrap();
     let key_scores: Vec<usize> = (0 .. 256).map(|k| col.iter().filter(|&u| (*u ^ k as u8) > 128).count()).collect();
     //let k = util::min_index(&key_scores).unwrap();
-    println!("keys len: {}", keys.len());
     let k = keys[util::min_index(&dist).unwrap()];
 
     let s: String = col.iter().map(|&u| chr!(u ^ k as u8)).collect();
                 
-    println!("col: {}", s);
+    //println!("col: {}", s);
     Ok(k as u8)
 }
 

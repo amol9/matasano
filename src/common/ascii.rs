@@ -124,3 +124,17 @@ pub fn scan_hex(input: &str) -> Result<String, err::Error> {
     Ok(output)
 }
 
+
+pub fn display_raw(raw: &Vec<u8>) -> String{
+    let mut out = String::new();
+    for r in raw {
+        out.push_str(&format!("\\x{:02}", r));
+    }
+    out
+}
+
+
+macro_rules! rawd {
+    ( $x : expr ) => ( ascii::display_raw( $x ) );
+}
+

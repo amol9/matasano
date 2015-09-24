@@ -64,3 +64,9 @@ fn test_dup() {
     assert_eq!(util::dup::<u32>(&vec![1, 2, 1, 3, 4, 2, 2]), vec![(1, 2), (2, 3)]);
 }
 
+#[test]
+fn test_freq() {
+    assert_eq!(util::freq::<u32>(&vec![1, 2, 1, 3, 4]), vec![(1, 2), (2, 1), (3, 1), (4, 1)]);
+    assert_eq!(util::freq::<u32>(&vec![1, 2, 1, 3, 4, 2, 2]), vec![(1, 2), (2, 3), (3, 1), (4, 1)]);
+}
+
