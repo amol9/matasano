@@ -17,6 +17,7 @@ pub static info: challenge::Info = challenge::Info {
 
 const trigrams_limit: usize = 50;
 const trigrams_key_limit: usize = 30;
+const trigrams_min_dups: usize = 3;     // minimum number of trigram duplicates needed in a column
 
 
 pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
@@ -49,24 +50,31 @@ pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
 
         if col.len() > 0 {
             let mut candidates = Vec::<u8>::new();
+            let mut weights = Vec::<u32>::new();
+
             let tidx = match tri_idx_it.next() {
                 Some(v) => *v,
                 None    => 3
             };
 
-            if tidx < 3 {
-                let tc = tri_c_it.next().unwrap();
-                if tc.len() > 2 {
-                    candidates = try!(narrow_candidates(tidx, &tc));
-                } else {
-                    candidates = try!(narrow_candidates_for_last_chars(&ciphers, &keystream));
-                }
-                //candidates = tcol.iter().map(|c| c ^ tc[0]).collect();
+            let empty_vec = Vec::<u8>::new();
+
+            let tc = match tri_c_it.next() {
+                Some(v) => v,
+                None    => &empty_vec
+            };
+
+            if tidx < 3 && tc.len() > trigrams_min_dups {
+                let cw = try!(narrow_candidates(tidx, &tc));
+                candidates = cw.0;
+                weights = cw.1;
             } else {
-                candidates = try!(narrow_candidates_for_last_chars(&ciphers, &keystream));
+                let cw = try!(narrow_candidates_for_last_chars(&ciphers, &keystream));
+                candidates = cw.0;
+                weights = cw.1;
             }
 
-            keystream.push(try!(break_column(&col, &candidates)));
+            keystream.push(try!(break_column(&col, &candidates, &weights)));
         } else {
             all_ciphers_done = true;
         }
@@ -76,9 +84,10 @@ pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
 }
 
 
-fn narrow_candidates(col: usize, c: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
-    let tri_col = try!(charfreq::trigrams_col(col, trigrams_limit, ""));
+fn narrow_candidates(col: usize, c: &Vec<u8>) -> Result<(Vec<u8>, Vec<u32>), err::Error> {
+    let tri_col: Vec<u8> = trigrams_col_no_weights!(col, trigrams_limit, "");
     let result: Vec<u8>;
+    let weights: Vec<u32> = Vec::<u32>::new();
 
     println!("dup count: {}", c.len());
 
@@ -101,11 +110,11 @@ fn narrow_candidates(col: usize, c: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
     }
 
     println!("candidates: {}", rawd!(&result));
-    Ok(result)
+    Ok((result, weights))
 }
 
 
-fn narrow_candidates_for_last_chars(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
+fn narrow_candidates_for_last_chars(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>) -> Result<(Vec<u8>, Vec<u32>), err::Error> {
     let mut prefixes = Vec::<(Vec<u8>, u8)>::new();
 
     let mut ks_it = keystream.iter().rev();
@@ -124,7 +133,6 @@ fn narrow_candidates_for_last_chars(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>)
                 true  => '#' as u8,
                 false => c1
             };
-
             prefix.push(c1);
 
             let mut c2 = cipher[ks_len - 1] ^ k2;
@@ -132,7 +140,6 @@ fn narrow_candidates_for_last_chars(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>)
                 true  => '#' as u8,
                 false => c2
             };
-
             prefix.push(c2);
 
             println!("{}", rts!(&prefix));
@@ -140,23 +147,26 @@ fn narrow_candidates_for_last_chars(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>)
         }
     }
 
-    let mut r = Vec::<u8>::new();
+    let mut r = Vec::<(u8, u32)>::new();
+    let add_weights = prefixes.len() < 4;
 
     for p in prefixes {
-        let t: Vec<u8> = try!(charfreq::trigrams_col(2, trigrams_limit, rts!(&p.0).as_ref()));
-        let keys: Vec<u8> = t.iter().filter(|&u| *u != '#' as u8).map(|u| u ^ p.1).collect();
+        let t: Vec<(u8, u32)> = try!(charfreq::trigrams_col(2, trigrams_limit, rts!(&p.0).as_ref()));
+        let keys: Vec<(u8, u32)> = t.iter().filter(|&u| u.0 != '#' as u8).map(|u| (u.0 ^ p.1, u.1)).collect();
 
-        let keys2: Vec<u8> = match t.iter().find(|&c| *c == '#' as u8) {
-            Some(_) => vnl.iter().map(|&c| c ^ p.1).collect(),
+        let keys2: Vec<(u8, u32)> = match t.iter().find(|&c| c.0 == '#' as u8) {
+            Some(v) => vnl.iter().map(|&c| (c ^ p.1, v.1)).collect(),
             None    => vec![]
         };
 
-        r.extend(&rawjoin!(&keys, &keys2));
+        r.extend(&keys);
+        r.extend(&keys2);
+        
     }
-    
-    let result = (0 .. trigrams_key_limit + 20).zip(util::freq(&r).iter()).map(|(_, &t)| (t as (u8, usize)).0).collect();
+
+    let (result, weights) = (0 .. trigrams_key_limit + 20).zip(util::freq(&r).iter()).map(|(_, &t)| ((t.0).0, (t.0).1)).unzip();
     println!("candidates: {}", rawd!(&result));
-    Ok(result)
+    Ok((result, weights))
 }
 
 
@@ -245,9 +255,13 @@ fn xor_keystream(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>) -> Vec<String> {
 }
 
 
-fn break_column(col: &Vec<u8>, candidates: &Vec<u8>) -> Result<u8, err::Error> {
+fn break_column(col: &Vec<u8>, candidates: &Vec<u8>, weights: &Vec<u32>) -> Result<u8, err::Error> {
+    ctry!(weights.len() > 0 && candidates.len() != weights.len(), "all candidates must have weight");
+
     let mut dist = Vec::<f32>::new();
     let mut keys: Vec<u8>;
+    let no_weight = weights.len() == 0;
+    let mut weights_it = weights.iter();
 
     if candidates.len() == 0 {
         keys = (0 .. 255).collect();
@@ -259,7 +273,12 @@ fn break_column(col: &Vec<u8>, candidates: &Vec<u8>) -> Result<u8, err::Error> {
 
     for i in keys.iter() {
         let xcol = col.iter().map(|&u| u ^ i).collect();
-        dist.push(try!(charfreq::distance_from_base(rts!(&xcol).as_ref())));
+        let d = try!(charfreq::distance_from_base(rts!(&xcol).as_ref()));
+        if no_weight {
+            dist.push(d);
+        } else {
+            dist.push(d / *weights_it.next().unwrap() as f32);
+        }
     }
 
     let k = keys[util::min_index(&dist).unwrap()];

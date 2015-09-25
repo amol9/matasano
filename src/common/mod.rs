@@ -8,6 +8,7 @@ pub mod base64;
 #[macro_use]
 pub mod ascii;
 pub mod cipher;
+#[macro_use]
 pub mod charfreq;
 pub mod xor;
 pub mod url;
