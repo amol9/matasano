@@ -96,10 +96,11 @@ pub fn i_generate_base_frequency_file() -> err::ExitCode {
 }
 
 
-pub fn trigrams_col(col: usize, limit: usize) -> Result<Vec<u8>, err::Error> {
+pub fn trigrams_col(col: usize, limit: usize, prefix: &str) -> Result<Vec<u8>, err::Error> {
     ctry!(col > 2, "trigrams valid columns are 0, 1 and 2");
     ctry!(limit > 1512, "only 1512 trigrams in the list");
 
-    Ok((0 .. limit).zip(trigrams::freq.iter()).map(|(_, &t)| (t as (&'static str, usize)).0.bytes().nth(col).unwrap()).collect())
+    Ok((0 .. limit).zip(trigrams::freq.iter().filter(|&t| t.0.starts_with(&prefix))).
+       map(|(_, &t)| (t as (&'static str, usize)).0.bytes().nth(col).unwrap()).collect())
 }
 

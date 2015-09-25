@@ -1,3 +1,5 @@
+// list copied from: http://home.ccil.org/~cowan/trigrams
+
 pub const freq: [(&'static str, usize); 1512] = [ 
 ("#th",230),
 ("the",192),

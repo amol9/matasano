@@ -16,7 +16,7 @@ pub static info: challenge::Info = challenge::Info {
 
 
 const trigrams_limit: usize = 50;
-const trigrams_key_limit: usize = 40;
+const trigrams_key_limit: usize = 30;
 
 
 pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
@@ -58,6 +58,8 @@ pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
                 let tc = tri_c_it.next().unwrap();
                 candidates = try!(narrow_candidates(tidx, &tc));
                 //candidates = tcol.iter().map(|c| c ^ tc[0]).collect();
+            } else {
+                candidates = try!(narrow_candidates_for_last_chars(&ciphers, &keystream));
             }
 
             keystream.push(try!(break_column(&col, &candidates)));
@@ -71,7 +73,7 @@ pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
 
 
 fn narrow_candidates(col: usize, c: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
-    let tri_col = try!(charfreq::trigrams_col(col, trigrams_limit));
+    let tri_col = try!(charfreq::trigrams_col(col, trigrams_limit, ""));
     let result: Vec<u8>;
 
     if c.len() == 1 {
@@ -96,14 +98,49 @@ fn narrow_candidates(col: usize, c: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
     Ok(result)
 }
 
-// detect trigrams
+
+fn narrow_candidates_for_last_chars(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
+    let mut prefixes = Vec::<(Vec<u8>, u8)>::new();
+
+    let mut ks_it = keystream.iter().rev();
+    let k2 = ks_it.next().unwrap();
+    let k1 = ks_it.next().unwrap();
+
+    let ks_len = keystream.len();
+
+    for c in ciphers {
+        if c.len() >= ks_len + 1 {
+            let mut prefix = Vec::<u8>::new();
+            prefix.push(c[ks_len - 2] ^ k1);
+            prefix.push(c[ks_len - 1] ^ k2);
+
+            println!("{}", rts!(&prefix));
+            prefixes.push((prefix, c[ks_len]));
+        }
+    }
+
+    let mut r = Vec::<u8>::new();
+
+    for p in prefixes {
+        let keys: Vec<u8> = try!(charfreq::trigrams_col(2, trigrams_limit, rts!(&p.0).as_ref())).iter().
+                                filter(|&u| *u != '#' as u8).map(|u| u ^ p.1).collect();
+        r.extend(&keys);
+    }
+    
+    let result = (0 .. 5).zip(util::freq(&r).iter()).map(|(_, &t)| (t as (u8, usize)).0).collect();
+    println!("candidates: {}", rawd!(&result));
+    Ok(result)
+}
+
+
+// detect trigrams (by detecting repeating 3-byte patterns starting at a column)
 // return:
 // 1. a vector of size = max cipher length
 //    with 0, 1 or 2 to indicate trigram character column in each position
 //    3: no trigram detected in that position
 // 2. a vector of size = max cipher length
 //    with trigram bytes (cipher) if detected in that position
-//    else: 0
+//    else: empty vector
 //
 pub fn detect_trigrams(ciphers: &Vec<Vec<u8>>) -> (Vec<usize>, Vec<Vec<u8>>) {
     let mut cipher_its: Vec<slice::Iter<u8>> = Vec::new();
