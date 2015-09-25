@@ -15,6 +15,10 @@ pub static info: challenge::Info = challenge::Info {
 };
 
 
+const trigrams_limit: usize = 50;
+const trigrams_key_limit: usize = 40;
+
+
 pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
     let mut cipher_its: Vec<slice::Iter<u8>> = Vec::new();
     let mut keystream = Vec::<u8>::new();
@@ -67,7 +71,7 @@ pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
 
 
 fn narrow_candidates(col: usize, c: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
-    let tri_col = try!(charfreq::trigrams_col(col));
+    let tri_col = try!(charfreq::trigrams_col(col, trigrams_limit));
     let result: Vec<u8>;
 
     if c.len() == 1 {
@@ -76,16 +80,16 @@ fn narrow_candidates(col: usize, c: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
 
         let mut r = Vec::<u8>::new();
 
-        let c_dups = util::freq(&c);
-        let t_dups = util::freq(&tri_col);
+        let cipher_chars_freq = util::freq(&c);
+        let trigram_chars_freq = util::freq(&tri_col);
 
-        for dup in c_dups.iter() {
-            let f = t_dups.iter().filter(|td| td.1 >= dup.1);
-            let n: Vec<u8> = f.map(|c| c.0 ^ dup.0).collect();
-            r.extend(&n);
+        for ccf in cipher_chars_freq.iter() {
+            let filtered_by_freq = trigram_chars_freq.iter().filter(|tcf| tcf.1 >= ccf.1 && tcf.0 != ('#' as u8));
+            let keys: Vec<u8> = filtered_by_freq.map(|fbf| fbf.0 ^ ccf.0).collect();
+            r.extend(&keys);
         }
 
-        result = util::freq(&r).iter().filter(|t| t.1 >= c_dups.len()).map(|t| t.0).collect();
+        result = (0 .. trigrams_key_limit).zip(util::freq(&r).iter()).map(|(_, &t)| (t as (u8, usize)).0).collect();
     }
 
     println!("candidates: {}", rawd!(&result));
@@ -184,6 +188,7 @@ fn break_column(col: &Vec<u8>, candidates: &Vec<u8>) -> Result<u8, err::Error> {
     if candidates.len() == 0 {
         keys = (0 .. 255).collect();
         keys.push(255);
+        return Ok(0);
     } else {
         keys = candidates.iter().cloned().collect();
     }
@@ -193,13 +198,9 @@ fn break_column(col: &Vec<u8>, candidates: &Vec<u8>) -> Result<u8, err::Error> {
         dist.push(try!(charfreq::distance_from_base(rts!(&xcol).as_ref())));
     }
 
-    //let keys = util::min_indices(&dist, 30).unwrap();
-    let key_scores: Vec<usize> = (0 .. 256).map(|k| col.iter().filter(|&u| (*u ^ k as u8) > 128).count()).collect();
-    //let k = util::min_index(&key_scores).unwrap();
     let k = keys[util::min_index(&dist).unwrap()];
 
-    let s: String = col.iter().map(|&u| chr!(u ^ k as u8)).collect();
-                
+    //let s: String = col.iter().map(|&u| chr!(u ^ k as u8)).collect();          
     //println!("col: {}", s);
     Ok(k as u8)
 }

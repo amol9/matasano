@@ -12,6 +12,7 @@ pub mod charfreq;
 pub mod xor;
 pub mod url;
 pub mod end;
+pub mod trigrams;
 
 pub mod challenge;
 

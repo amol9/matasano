@@ -4,7 +4,7 @@ use std::f32;
 use std::fs;
 use std::env;
 
-use common::{err, ascii};
+use common::{err, ascii, trigrams};
 
 
 static BASE_FREQ_FILENAME: &'static str = "basefreq";
@@ -96,12 +96,10 @@ pub fn i_generate_base_frequency_file() -> err::ExitCode {
 }
 
 
-pub const trigrams: [&'static str; 16] = ["the", "and", "tha", "ent", "ing", "ion", "tio", "for", "nde",
-                                            "has", "nce", "edt", "tis", "oft", "sth", "men"];
-
-
-pub fn trigrams_col(col: usize) -> Result<Vec<u8>, err::Error> {
+pub fn trigrams_col(col: usize, limit: usize) -> Result<Vec<u8>, err::Error> {
     ctry!(col > 2, "trigrams valid columns are 0, 1 and 2");
-    Ok(trigrams.iter().map(|&t| t.bytes().nth(col).unwrap()).collect())
+    ctry!(limit > 1512, "only 1512 trigrams in the list");
+
+    Ok((0 .. limit).zip(trigrams::freq.iter()).map(|(_, &t)| (t as (&'static str, usize)).0.bytes().nth(col).unwrap()).collect())
 }
 
