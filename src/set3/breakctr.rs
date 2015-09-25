@@ -56,7 +56,11 @@ pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
 
             if tidx < 3 {
                 let tc = tri_c_it.next().unwrap();
-                candidates = try!(narrow_candidates(tidx, &tc));
+                if tc.len() > 2 {
+                    candidates = try!(narrow_candidates(tidx, &tc));
+                } else {
+                    candidates = try!(narrow_candidates_for_last_chars(&ciphers, &keystream));
+                }
                 //candidates = tcol.iter().map(|c| c ^ tc[0]).collect();
             } else {
                 candidates = try!(narrow_candidates_for_last_chars(&ciphers, &keystream));
@@ -75,6 +79,8 @@ pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
 fn narrow_candidates(col: usize, c: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
     let tri_col = try!(charfreq::trigrams_col(col, trigrams_limit, ""));
     let result: Vec<u8>;
+
+    println!("dup count: {}", c.len());
 
     if c.len() == 1 {
         result = tri_col.iter().map(|tc| tc ^ c[0]).collect();
@@ -107,27 +113,48 @@ fn narrow_candidates_for_last_chars(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>)
     let k1 = ks_it.next().unwrap();
 
     let ks_len = keystream.len();
+    let vnl = ascii::valid_non_letters();
 
-    for c in ciphers {
-        if c.len() >= ks_len + 1 {
+    for cipher in ciphers {
+        if cipher.len() >= ks_len + 1 {
             let mut prefix = Vec::<u8>::new();
-            prefix.push(c[ks_len - 2] ^ k1);
-            prefix.push(c[ks_len - 1] ^ k2);
+            
+            let mut c1 = cipher[ks_len - 2] ^ k1;
+            c1 = match vnl.iter().any(|&c| c == c1) {
+                true  => '#' as u8,
+                false => c1
+            };
+
+            prefix.push(c1);
+
+            let mut c2 = cipher[ks_len - 1] ^ k2;
+            c2 = match vnl.iter().any(|&c| c == c2) {
+                true  => '#' as u8,
+                false => c2
+            };
+
+            prefix.push(c2);
 
             println!("{}", rts!(&prefix));
-            prefixes.push((prefix, c[ks_len]));
+            prefixes.push((prefix, cipher[ks_len]));
         }
     }
 
     let mut r = Vec::<u8>::new();
 
     for p in prefixes {
-        let keys: Vec<u8> = try!(charfreq::trigrams_col(2, trigrams_limit, rts!(&p.0).as_ref())).iter().
-                                filter(|&u| *u != '#' as u8).map(|u| u ^ p.1).collect();
-        r.extend(&keys);
+        let t: Vec<u8> = try!(charfreq::trigrams_col(2, trigrams_limit, rts!(&p.0).as_ref()));
+        let keys: Vec<u8> = t.iter().filter(|&u| *u != '#' as u8).map(|u| u ^ p.1).collect();
+
+        let keys2: Vec<u8> = match t.iter().find(|&c| *c == '#' as u8) {
+            Some(_) => vnl.iter().map(|&c| c ^ p.1).collect(),
+            None    => vec![]
+        };
+
+        r.extend(&rawjoin!(&keys, &keys2));
     }
     
-    let result = (0 .. 5).zip(util::freq(&r).iter()).map(|(_, &t)| (t as (u8, usize)).0).collect();
+    let result = (0 .. trigrams_key_limit + 20).zip(util::freq(&r).iter()).map(|(_, &t)| (t as (u8, usize)).0).collect();
     println!("candidates: {}", rawd!(&result));
     Ok(result)
 }

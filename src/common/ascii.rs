@@ -99,6 +99,12 @@ pub fn valid_chars() -> Vec<u8> {
 }
 
 
+pub fn valid_non_letters() -> Vec<u8> {
+    let mut vc: Vec<u8> = valid_chars();
+    vc.iter().filter(|&c| !((*c >= 'a' as u8 && *c <= 'z' as u8) || (*c >= 'A' as u8 && *c <= 'Z' as u8))).cloned().collect()
+}
+
+
 // convert stdin input strings containing hex chars, like, \x01
 pub fn scan_hex(input: &str) -> Result<String, err::Error> {
     let mut output = String::new();
