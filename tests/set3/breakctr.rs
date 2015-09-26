@@ -1,6 +1,6 @@
 
 use matasano::set3::breakctr as bc;
-use matasano::common::ascii;
+use matasano::common::{ascii, util, base64};
 
 
 macro_rules! raw {
@@ -25,3 +25,26 @@ fn test_detect_trigrams() {
     assert!(result_i.starts_with(&[0, 1, 2, 3, 0, 1, 2]));
     assert!(result_c.starts_with(&[raw!("aw"), raw!("be"), raw!("cr"), vec![], raw!("k"), raw!("l"), raw!("s")]));
 }
+
+
+#[test]
+fn test_cryptopals_case() {
+    let filepath = "data/19.txt";
+    let input = m!(util::read_file_to_str(&filepath));
+
+    let ciphers = m!(bc::generate_ciphers_from_file(&filepath));
+    let plains = m!(bc::break_ctr(&ciphers));
+
+    let mut failures: usize = 0;
+
+    for (line, plain) in input.lines().zip(&plains) {
+        let dline = m!(ascii::raw_to_str(&m!(base64::base64_to_raw(&line))));
+        if dline.to_lowercase() != *plain.to_lowercase() {
+            failures += dline.chars().zip(plain.chars()).filter(|&(l, p)| l != p).count();
+        }
+    }
+    let failure_ratio = failures as f32 / input.len() as f32;
+
+    assert!(failure_ratio < 0.01)       // known issue: problem with last few characters, so, decryption is apprx. 99% accurate
+}
+

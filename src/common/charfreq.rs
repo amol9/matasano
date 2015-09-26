@@ -100,8 +100,13 @@ pub fn trigrams_col(col: usize, limit: usize, prefix: &str) -> Result<Vec<(u8, u
     ctry!(col > 2, "trigrams valid columns are 0, 1 and 2");
     ctry!(limit > 1512, "only 1512 trigrams in the list");
 
-    Ok((0 .. limit).zip(trigrams::freq.iter().filter(|&t| t.0.starts_with(&prefix))).
-       map(|(_, &t)| (t.0.bytes().nth(col).unwrap(), t.1 as u32)).collect())
+    //type tt = (&'static str, usize);
+
+    Ok((0 .. limit).zip(trigrams::freq.iter())
+        .map(|(_, &t)| t)
+        .filter(|&t| t.0.starts_with(&prefix))
+        .map(|t| (t.0.bytes().nth(col).unwrap(), t.1 as u32))
+        .collect())
 }
 
 
