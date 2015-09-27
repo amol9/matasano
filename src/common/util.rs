@@ -78,6 +78,16 @@ macro_rules! input {
 }
 
 
+pub fn input(msg: &str) -> Result<String, err::Error> {
+    print!("{}", msg);
+    etry!(io::stdout().flush(), "io error");
+
+    let mut s = String::new();
+    io::stdin().read_line(&mut s);
+    Ok(s)
+}
+
+
 pub fn read_file_to_str(filepath: &str) -> Result<String, err::Error> {
     match fs::metadata(&filepath) {
         Ok(v)   => {},

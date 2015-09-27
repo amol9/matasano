@@ -28,12 +28,12 @@ fn test_detect_trigrams() {
 
 
 #[test]
-fn test_cryptopals_case() {
+fn test_cryptopals_case_auto() {
     let filepath = "data/19.txt";
     let input = m!(util::read_file_to_str(&filepath));
 
     let ciphers = m!(bc::generate_ciphers_from_file(&filepath));
-    let plains = m!(bc::break_ctr(&ciphers));
+    let (plains, _) = m!(bc::break_ctr(&ciphers));
 
     let mut failures: usize = 0;
 
@@ -46,5 +46,22 @@ fn test_cryptopals_case() {
     let failure_ratio = failures as f32 / input.len() as f32;
 
     assert!(failure_ratio < 0.01)       // known issue: problem with last few characters, so, decryption is apprx. 99% accurate
+}
+
+
+#[test]
+fn test_cryptopals_case_manual() {
+    let filepath = "data/19.txt";
+    let input = m!(util::read_file_to_str(&filepath));
+
+    let ciphers = m!(bc::generate_ciphers_from_file(&filepath));
+    let guesses = vec![(4, "head"), (37, "turn,")];
+
+    let plains = m!(bc::break_ctr_with_manual_guess_for_last_chars(&ciphers, &guesses));
+
+    for (line, plain) in input.lines().zip(&plains) {
+        let dline = m!(ascii::raw_to_str(&m!(base64::base64_to_raw(&line))));
+        assert_eq!(dline.to_lowercase(), plain.to_lowercase());
+    }
 }
 

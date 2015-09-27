@@ -1,5 +1,7 @@
 use std::env;
 use std::slice;
+use std::io;
+use std::io::prelude::*;
 
 use common::{err, challenge, ascii, base64, util, charfreq};
 use common::cipher::aes;
@@ -19,13 +21,14 @@ const trigrams_limit: usize = 50;                   // number of trigrams to use
 const trigrams_limit_last_characters: usize = 400;  // number of trigrams to use for guessing last few characters
 const trigrams_key_limit: usize = 20;               // number of candidate keys to use for guessing after sorting by (weight * count)
 const trigrams_min_dups: usize = 3;                 // minimum number of trigram duplicates needed in a column
+const min_prefixes_for_last_chars: usize = 3;       // minimum number of prefixes needed to guess the last few characters without weights
 
 
 // break ctr cipher one column at a time
 // input:  a list of cipher strings encrypted usinf CTR with same nonce
-// output: a corresponding list of decrypted plain texts
+// output: a corresponding list of decrypted plain texts and keystream
 //
-pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
+pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<(Vec<String>, Vec<u8>), err::Error> {
     let mut cipher_its: Vec<slice::Iter<u8>> = Vec::new();
     let mut keystream = Vec::<u8>::new();
 
@@ -82,7 +85,7 @@ pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<String>, err::Error> {
         }
     }
 
-    Ok(xor_keystream(&ciphers, &keystream))
+    Ok((xor_keystream(&ciphers, &keystream), keystream))
 }
 
 
@@ -125,7 +128,7 @@ fn filter_candidates(col: usize, c: &Vec<u8>) -> Result<(Vec<u8>, Vec<u32>), err
 // we use last 2 decrypted characters as a prefix to predict next character using the trigram list
 //
 fn filter_candidates_for_last_chars(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>) -> Result<(Vec<u8>, Vec<u32>), err::Error> {
-    let mut prefixes = Vec::<(Vec<u8>, u8)>::new();         // all prefixes of length 2
+    let mut prefixes = Vec::<(Vec<u8>, u8, usize)>::new();         // all prefixes of length 2
 
     let mut ks_it = keystream.iter().rev();
     let k2 = ks_it.next().unwrap();
@@ -146,12 +149,12 @@ fn filter_candidates_for_last_chars(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>)
             prefix.push(replace_non_letter_by_hash(cipher[ks_len - 1] ^ k2));
 
             //println!("{}", rts!(&prefix));
-            prefixes.push((prefix, cipher[ks_len]));
+            prefixes.push((prefix, cipher[ks_len], cipher.len() - ks_len));
         }
     }
 
     let mut r = Vec::<(u8, u32)>::new();        // hold the (key, weight) pairs before sorting
-    let add_weights = prefixes.len() < 3;
+    let not_enough_prefixes = prefixes.len() < min_prefixes_for_last_chars;
 
     for p in prefixes {
         let tcol: Vec<(u8, u32)> = try!(charfreq::trigrams_col(2, trigrams_limit_last_characters, rts!(&p.0).as_ref()));
@@ -170,9 +173,9 @@ fn filter_candidates_for_last_chars(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>)
     //for i in r2.iter() {
     //    println!("({}, {}), {}", (i.0).0, (i.0).1, i.1);
     //}
-                                                        // only take the first "n" candidate keys
+                                                            // only take the first "n" candidate keys
     let (mut result, mut weights): (Vec<u8>, Vec<u32>) = (0 .. trigrams_key_limit).zip(r2).map(|(_, t)| ((t.0).0, (t.0).1)).unzip();
-    if ! add_weights {
+    if ! not_enough_prefixes {
         weights.clear();
     } 
     
@@ -311,6 +314,77 @@ pub fn generate_ciphers_from_file(filepath: &str) -> Result<Vec<Vec<u8>>, err::E
 }
 
 
+// this function will keep asking the user for his guesses for last characters
+// it first calls auto decryption, then expects the user to supply guesses
+// a guess is provided as: line no, suffix
+// e.g. > 4, head
+// use # for wildcard
+// e.g. > 4, hat# or > 4, ##er, etc.
+// enter nothing to exit the loop
+//
+// input parameter guesses is intended for automated testing
+//
+pub fn break_ctr_with_manual_guess_for_last_chars(ciphers: &Vec<Vec<u8>>, guesses: &Vec<(usize, &str)>) ->
+    Result<Vec<String>, err::Error> {
+
+    let (mut plains, mut keystream) = try!(break_ctr(&ciphers));
+
+    fn display(plains: &Vec<String>) {      // display plain text lines with line numbers
+        let mut c = 0;
+        for p in plains {
+            println!("{:02} {}", c, p);
+            c += 1;
+        }
+    }
+
+    fn fix_keystream(line_no: usize, suffix: &str, ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>) -> Result<Vec<u8>, err::Error> {
+        let suffix_r = raw!(&suffix);
+        let cipher: &Vec<u8> = &ciphers[line_no];
+        let new_ks_bytes: Vec<u8> = cipher.iter().rev().zip(suffix_r.iter().rev()).map(|(c, s)| c ^ s).rev().collect();
+
+        let mut new_keystream = keystream.clone();
+        let ks_start = cipher.len() - suffix_r.len();
+
+        for i in 0 .. new_ks_bytes.len() {
+            if suffix_r[i] != '#' as u8 {
+                new_keystream[ks_start + i] = new_ks_bytes[i];
+            }
+        }
+        Ok(new_keystream)
+    };
+
+    if guesses.len() > 0 {              // guesses provided, so, don't ask the user
+        for guess in guesses {
+            keystream = try!(fix_keystream(guess.0, guess.1, &ciphers, &mut keystream));
+            plains = xor_keystream(&ciphers, &keystream);
+        }
+    } else {                            // interact with user
+        display(&plains);
+
+        while true {
+            let user_input = try!(util::input("enter guess (line no, last chars) [blank to exit]: "));
+
+            if user_input.trim() == "" {
+                break;
+            }
+
+            let parts: Vec<&str> = user_input.splitn(2, ",").collect();
+            ctry!(parts.len() != 2, "need two values: line number, suffix");
+
+            let line_no = etry!(parts[0].parse::<usize>(), format!("{} is not a valid number", parts[0]));
+            let suffix = parts[1].trim();
+
+            keystream = try!(fix_keystream(line_no, &suffix, &ciphers, &mut keystream));
+            plains = xor_keystream(&ciphers, &keystream);
+
+            display(&plains);
+        }
+    }
+
+    Ok(plains)
+}
+
+
 pub fn interactive() -> err::ExitCode {
     let input_filepath = match env::args().nth(2) {
         Some(v) => v,
@@ -318,7 +392,7 @@ pub fn interactive() -> err::ExitCode {
     };
 
     let ciphers = rtry!(generate_ciphers_from_file(&input_filepath), exit_err!());
-    let plains = rtry!(break_ctr(&ciphers), exit_err!());
+    let plains = rtry!(break_ctr_with_manual_guess_for_last_chars(&ciphers, &vec![]), exit_err!());
 
     for p in plains {
         println!("{}", p);
