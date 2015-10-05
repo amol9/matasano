@@ -3,11 +3,6 @@ use matasano::set3::breakctr as bc;
 use matasano::common::{ascii, util, base64};
 
 
-macro_rules! raw {
-    ( $x : expr ) => ( m!( ascii::str_to_raw( $x ) ) );
-}
-
-
 #[test]
 fn test_detect_trigrams() {
     let input: Vec<Vec<u8>> = vec![raw!("abcfeoowoptpeefs"),

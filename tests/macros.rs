@@ -42,3 +42,13 @@ macro_rules! r {
     ( $x : expr ) => ( m!( ascii::str_to_raw( $x ) ) );
 }
 
+
+macro_rules! raw {
+    ( $x : expr ) => ( m!( ascii::str_to_raw( $x ) ) );
+}
+
+
+macro_rules! rts {
+    ( $x : expr ) => ( m!( ascii::raw_to_str( $x ) ) );
+}
+

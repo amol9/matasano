@@ -135,7 +135,7 @@ pub fn guess_key(cipherraw: &Vec<u8>, keylength: usize) -> Result<Vec<u8>, err::
 
     let mut key = Vec::new();
     for slice in cipher_trans {
-        let keybyte: u8 = try!(obx::guess_key(&slice)).key;
+        let keybyte: u8 = try!(obx::guess_key(&slice, None)).key;
         key.push(keybyte);
     }
     Ok(key)

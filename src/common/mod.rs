@@ -2,6 +2,7 @@
 pub mod err;
 #[macro_use]
 pub mod util;
+#[macro_use]
 pub mod hex;
 #[macro_use]
 pub mod base64;

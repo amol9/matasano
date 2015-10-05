@@ -4,6 +4,7 @@ use std::io;
 use std::io::prelude::*;
 
 use common::{err, challenge, ascii, base64, util, charfreq};
+use common::cipher::one_byte_xor as obx;
 use common::cipher::aes;
 use common::cipher::cipherbox as cb;
 
@@ -76,10 +77,13 @@ pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<(Vec<String>, Vec<u8>), err::
                 cw = try!(filter_candidates_for_last_chars(&ciphers, &keystream));
             }
 
-            let candidates = cw.0;
-            let weights = cw.1;
+            let weights: Vec<f32> = cw.1.iter().map(|v| *v as f32).collect();
+            let mut options = obx::GuessOptions::new();
+            if cw.0.len() > 0 {
+                try!(options.set_candidates(&cw.0, &weights));
+            }
 
-            keystream.push(try!(break_column(&col, &candidates, &weights)));
+            keystream.push(try!(obx::guess_key(&col, Some(&options))).key);
         } else {
             all_ciphers_done = true;
         }
@@ -258,7 +262,7 @@ pub fn detect_trigrams(ciphers: &Vec<Vec<u8>>) -> (Vec<usize>, Vec<Vec<u8>>) {
 }
 
 
-fn xor_keystream(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>) -> Vec<String> {
+pub fn xor_keystream(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>) -> Vec<String> {
     let mut result = Vec::<String>::new();
 
     for c in ciphers {
@@ -268,7 +272,7 @@ fn xor_keystream(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>) -> Vec<String> {
 }
 
 
-fn break_column(col: &Vec<u8>, candidates: &Vec<u8>, weights: &Vec<u32>) -> Result<u8, err::Error> {
+pub fn break_column(col: &Vec<u8>, candidates: &Vec<u8>, weights: &Vec<u32>) -> Result<u8, err::Error> {
     ctry!(weights.len() > 0 && candidates.len() != weights.len(), "all candidates must have weight");
 
     let mut dist = Vec::<f32>::new();

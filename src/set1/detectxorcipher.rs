@@ -3,7 +3,7 @@ use std::fs;
 use std::env;
 use std::f32;
 
-use common::{err, util, challenge};
+use common::{err, util, challenge, ascii, hex};
 use common::cipher::one_byte_xor as obx;
 
 
@@ -30,7 +30,7 @@ pub fn detect_xor_cipher(input: &Vec<String>) -> Result<String, err::Error> {
     let mut dist: Vec<f32> = Vec::new();
 
     for hexstr in input {
-        match obx::try_decipher(&hexstr) {
+        match obx::guess_key(&htr!(&hexstr), None) {
             Ok(v)   => dist.push(v.distance),
             Err(_)  => dist.push(f32::MAX)
         };

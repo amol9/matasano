@@ -4,8 +4,10 @@ use std::char;
 
 use common::err;
 
+
 pub struct lower;
 pub struct upper;
+
 
 pub trait convert {
     fn u8_to_hex(n: u8) -> Option<char>;
@@ -22,7 +24,6 @@ impl convert for upper {
         char::from_u32(n as u32 + 55)
     }
 }
-
 
 pub fn hex_to_raw(input: &str) -> Result<Vec<u8>, err::Error> {
 	if (((input.len()) % 2) == 1) {
@@ -46,7 +47,6 @@ pub fn hex_to_raw(input: &str) -> Result<Vec<u8>, err::Error> {
 	Ok(raw)
 }
 
-
 pub fn hex_char_to_u8(hex_char: char) -> Result<u8, err::Error> {
 	if (hex_char >= '0' && hex_char <= '9') {
 		return Ok(hex_char as u8 - 48);
@@ -61,7 +61,6 @@ pub fn hex_char_to_u8(hex_char: char) -> Result<u8, err::Error> {
 	Err(err::make_error(format!("invalid hex digit {}", hex_char)))
 }
 
-
 pub fn u8_to_hex_char<T=lower>(dec: u8) -> Result<char, err::Error> where T: convert {
 	if (dec > 15) {
 		return Err(err::make_error(String::from("must be a 4-bit decimal")));
@@ -75,7 +74,6 @@ pub fn u8_to_hex_char<T=lower>(dec: u8) -> Result<char, err::Error> where T: con
 	Ok(hex_char)
 }
 
-
 pub fn raw_to_hex<T=lower>(raw: &Vec<u8>) -> Result<String, err::Error> where T: convert {
 	let mut result: String = String::new();
 
@@ -84,5 +82,13 @@ pub fn raw_to_hex<T=lower>(raw: &Vec<u8>) -> Result<String, err::Error> where T:
 		result.push(try!(u8_to_hex_char::<T>(n & 0xF)));
 	}
 	Ok(result)
+}
+
+macro_rules! htr {
+    ( $x : expr ) => ( try!( hex::hex_to_raw( $x ) ) );
+}
+
+macro_rules! rth {
+    ( $x : expr ) => ( try!( hex::raw_to_hex( $x ) ) );
 }
 
