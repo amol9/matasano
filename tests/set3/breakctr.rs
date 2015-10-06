@@ -28,7 +28,8 @@ fn test_cryptopals_case_auto() {
     let input = m!(util::read_file_to_str(&filepath));
 
     let ciphers = m!(bc::generate_ciphers_from_file(&filepath));
-    let (plains, _) = m!(bc::break_ctr(&ciphers));
+    let keystream = m!(bc::break_ctr(&ciphers));
+    let plains = bc::xor_keystream(&ciphers, &keystream);
 
     let mut failures: usize = 0;
 

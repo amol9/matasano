@@ -16,7 +16,6 @@ pub static info: challenge::Info = challenge::Info {
     execute_fn: interactive
 };
 
-
 // heuristically determined constants:
 const trigrams_limit: usize = 50;                   // number of trigrams to use for guessing using duplicate occurrences
 const trigrams_limit_last_characters: usize = 400;  // number of trigrams to use for guessing last few characters
@@ -29,7 +28,7 @@ const min_prefixes_for_last_chars: usize = 3;       // minimum number of prefixe
 // input:  a list of cipher strings encrypted usinf CTR with same nonce
 // output: a corresponding list of decrypted plain texts and keystream
 //
-pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<(Vec<String>, Vec<u8>), err::Error> {
+pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<u8>, err::Error> {
     let mut cipher_its: Vec<slice::Iter<u8>> = Vec::new();
     let mut keystream = Vec::<u8>::new();
 
@@ -89,9 +88,8 @@ pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<(Vec<String>, Vec<u8>), err::
         }
     }
 
-    Ok((xor_keystream(&ciphers, &keystream), keystream))
+    Ok(keystream)
 }
-
 
 fn filter_candidates(col: usize, c: &Vec<u8>) -> Result<(Vec<u8>, Vec<u32>), err::Error> {
     let tri_col: Vec<u8> = trigrams_col_no_weights!(col, trigrams_limit, "");
@@ -126,7 +124,6 @@ fn filter_candidates(col: usize, c: &Vec<u8>) -> Result<(Vec<u8>, Vec<u32>), err
     //println!("candidates: {}", rawd!(&result));
     Ok((result, weights))
 }
-
 
 // for the last few characters (columns for which the count of duplicate trigrams detected < 3),
 // we use last 2 decrypted characters as a prefix to predict next character using the trigram list
@@ -186,7 +183,6 @@ fn filter_candidates_for_last_chars(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>)
     //println!("candidates: {}", rawd!(&result));
     Ok((result, weights))
 }
-
 
 // detect trigrams (by detecting repeating 3-byte patterns starting at a column)
 // return:
@@ -261,7 +257,6 @@ pub fn detect_trigrams(ciphers: &Vec<Vec<u8>>) -> (Vec<usize>, Vec<Vec<u8>>) {
     (result_i, result_c)
 }
 
-
 pub fn xor_keystream(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>) -> Vec<String> {
     let mut result = Vec::<String>::new();
 
@@ -270,40 +265,6 @@ pub fn xor_keystream(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>) -> Vec<String>
     }
     result
 }
-
-
-pub fn break_column(col: &Vec<u8>, candidates: &Vec<u8>, weights: &Vec<u32>) -> Result<u8, err::Error> {
-    ctry!(weights.len() > 0 && candidates.len() != weights.len(), "all candidates must have weight");
-
-    let mut dist = Vec::<f32>::new();
-    let mut keys: Vec<u8>;
-    let no_weights = weights.len() == 0;
-    let mut weights_it = weights.iter();
-
-    if candidates.len() == 0 {                  // if no candidate keys are provided, use brute force
-        keys = (0 .. 255).collect();
-        keys.push(255);
-    } else {
-        keys = candidates.iter().cloned().collect();
-    }
-
-    for i in keys.iter() {
-        let xcol = col.iter().map(|&u| u ^ i).collect();
-        let d = try!(charfreq::distance_from_base(rts!(&xcol).as_ref()));
-        if no_weights {
-            dist.push(d);
-        } else {
-            dist.push(d / *weights_it.next().unwrap() as f32);
-        }
-    }
-
-    let key = keys[util::min_index(&dist).unwrap()];
-    //let s: String = col.iter().map(|&u| chr!(u ^ k as u8)).collect();          
-    //println!("col: {}", s);
-    
-    Ok(key as u8)
-}
-
 
 pub fn generate_ciphers_from_file(filepath: &str) -> Result<Vec<Vec<u8>>, err::Error> {
     let text = try!(util::read_file_to_str(&filepath));
@@ -317,6 +278,13 @@ pub fn generate_ciphers_from_file(filepath: &str) -> Result<Vec<Vec<u8>>, err::E
     Ok(ciphers)
 }
 
+pub fn break_ctr_with_manual_guess_for_last_chars(ciphers: &Vec<Vec<u8>>, guesses: &Vec<(usize, &str)>) ->
+    Result<Vec<String>, err::Error> {
+
+    let keystream = try!(break_ctr(&ciphers));
+    let plains = try!(manual_guess_for_last_chars(&ciphers, &keystream, &guesses));
+    Ok(plains)
+}
 
 // this function will keep asking the user for his guesses for last characters
 // it first calls auto decryption, then expects the user to supply guesses
@@ -328,10 +296,11 @@ pub fn generate_ciphers_from_file(filepath: &str) -> Result<Vec<Vec<u8>>, err::E
 //
 // input parameter guesses is intended for automated testing
 //
-pub fn break_ctr_with_manual_guess_for_last_chars(ciphers: &Vec<Vec<u8>>, guesses: &Vec<(usize, &str)>) ->
+pub fn manual_guess_for_last_chars(ciphers: &Vec<Vec<u8>>, auto_guess_keystream: &Vec<u8>, guesses: &Vec<(usize, &str)>) ->
     Result<Vec<String>, err::Error> {
 
-    let (mut plains, mut keystream) = try!(break_ctr(&ciphers));
+    let mut plains = xor_keystream(&ciphers, &auto_guess_keystream);
+    let mut keystream = auto_guess_keystream.clone();
 
     fn display(plains: &Vec<String>) {      // display plain text lines with line numbers
         let mut c = 0;
@@ -387,7 +356,6 @@ pub fn break_ctr_with_manual_guess_for_last_chars(ciphers: &Vec<Vec<u8>>, guesse
 
     Ok(plains)
 }
-
 
 pub fn interactive() -> err::ExitCode {
     let input_filepath = match env::args().nth(2) {
