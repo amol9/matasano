@@ -54,7 +54,7 @@ pub fn min_indices<T: PartialOrd>(list: &Vec<T>, count: usize) -> Option<Vec<usi
 }
 
 
-macro_rules! input {
+/*macro_rules! input {
     ( $msg: expr, $str: expr ) => ( 
         print!($msg);
         rtry!(io::stdout().flush(), 1);
@@ -75,18 +75,35 @@ macro_rules! input {
             };
         }
     );
-}
-
+}*/
 
 pub fn input(msg: &str) -> Result<String, err::Error> {
-    print!("{}", msg);
-    etry!(io::stdout().flush(), "io error");
+    print!("{}: ", msg);
+    etry!(io::stdout().flush(), "stdout flush error");
 
     let mut s = String::new();
-    io::stdin().read_line(&mut s);
+    etry!(io::stdin().read_line(&mut s), "input error");
+
     Ok(s)
 }
 
+pub fn input_d(msg: &str, default: &str) -> Result<String, err::Error> {
+    print!("{}[{}]: ", msg, default);
+    etry!(io::stdout().flush(), "stdout flush error");
+
+    let mut s = String::new();
+    match io::stdin().read_line(&mut s) {
+        Ok(n)   => {
+            if n == 1 {
+                s.clear();
+                s.push_str(&default);
+            }
+            Ok(s)
+        },
+
+        Err(e)  => etry!(Err(e), "input error")
+    }
+}
 
 pub fn read_file_to_str(filepath: &str) -> Result<String, err::Error> {
     match fs::metadata(&filepath) {
@@ -164,7 +181,11 @@ pub fn shift_left_and_push(input: &Vec<u8>, byte: u8) -> Result<Vec<u8>, err::Er
 macro_rules! printc {
     ( $x : expr ) => ( 
         print!("{}", $x );
-        io::stdout().flush(); );
+        match io::stdout().flush() {
+            Ok(_)   => {},
+            Err(_)  => {}
+        };
+    );
 }
 
 

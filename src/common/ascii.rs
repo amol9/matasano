@@ -52,11 +52,17 @@ macro_rules! rts {
     ( $x : expr ) => ( try!( ascii::raw_to_str( $x ) ) );
 }
 
-
 macro_rules! raw {
     ( $x : expr ) => ( try!( ascii::str_to_raw( $x ) ) );
 }
 
+macro_rules! rrts {
+    ( $x : expr ) => ( rtry!( ascii::raw_to_str( $x ) , exit_err!() ) );
+}
+
+macro_rules! rraw {
+    ( $x : expr ) => ( rtry!( ascii::str_to_raw( $x ) , exit_err!() ) );
+}
 
 macro_rules! strjoin {
     ( $ ( $x : expr ), * ) => (
@@ -100,7 +106,7 @@ pub fn valid_chars() -> Vec<u8> {
 
 
 pub fn valid_non_letters() -> Vec<u8> {
-    let mut vc: Vec<u8> = valid_chars();
+    let vc: Vec<u8> = valid_chars();
     vc.iter().filter(|&c| !((*c >= 'a' as u8 && *c <= 'z' as u8) || (*c >= 'A' as u8 && *c <= 'Z' as u8))).cloned().collect()
 }
 
@@ -114,7 +120,7 @@ pub fn scan_hex(input: &str) -> Result<String, err::Error> {
     while c != None {
         if c.unwrap() == '\\' {
             let (x, h1, h2) = (char_it.next(), char_it.next(), char_it.next());
-            if ( x != None && x.unwrap() == 'x' && h1 != None && h2 != None ) {
+            if x != None && x.unwrap() == 'x' && h1 != None && h2 != None {
                 let xc = try!(hex::hex_char_to_u8(h1.unwrap())) << 4 | try!(hex::hex_char_to_u8(h2.unwrap()));
                 output.push(u8_to_char(xc));
             } else {

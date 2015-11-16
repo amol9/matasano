@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use common::{err, challenge, hex, ascii};
-use common::cipher::cipherbox as cb;
 use common::cipher::{aes, key};
 
 
@@ -50,7 +49,7 @@ impl AuthBox {
         println!("decrypted: {}", plain_str);
 
         let role = match plain_str.find(";admin=true") {
-            Some(v) => "admin",
+            Some(_) => "admin",
             None    => "other"
         };
 

@@ -3,9 +3,9 @@ use std::env;
 extern crate rand;
 use self::rand::Rng;
 
-use common::{err, challenge, hex, ascii};
+use common::{err, challenge, ascii};
 use common::cipher::cipherbox as cb;
-use common::cipher::{aes, key, padding};
+use common::cipher::{aes, padding};
 
 
 pub static info: challenge::Info = challenge::Info {
@@ -102,7 +102,7 @@ fn break_last_block(obox: &OBox, cipher: &Vec<u8>, blocksize: usize) -> Result<V
     let last_block = block_iter.next().unwrap().to_vec();
     let sec_last_block = block_iter.next().unwrap().to_vec();
 
-    for i in 0 .. blocksize {
+    for _ in 0 .. blocksize {
         for guess in 0 .. 128 {
             let mut b1: Vec<u8> = sec_last_block.clone();
 

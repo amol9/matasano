@@ -1,5 +1,3 @@
-use std::io;
-use std::io::prelude::*;
 use std::env;
 
 use common::{err, util, ascii, base64, challenge};
@@ -33,10 +31,10 @@ pub fn interactive() -> err::ExitCode {
         None    => { println!("please specify input data filepath"); return exit_err!(); }
     };
 
-    let mut key = String::new();
-    input!("enter key: ", &mut key);
+    let key = rtry!(util::input("enter key"), exit_err!());
 
     let plaintext = rtry!(decrypt_from_file(&input_filepath, &key.trim()), exit_err!());
+
     println!("{}", plaintext);
     exit_ok!()
 }

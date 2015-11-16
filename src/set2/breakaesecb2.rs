@@ -21,16 +21,16 @@ const special_input_char: char = 'A';
 pub fn break_aes_ecb(cbox: &cb::CipherBox) -> Result<String, err::Error> {
     let blocksize = 16;
 
-    let mut input = vec![special_input_char as u8; blocksize * 3 - 1];
+    let input = vec![special_input_char as u8; blocksize * 3 - 1];
     let cipher = try!(cbox.encrypt(&input));
-    let blockA = try!(find_cons_same_cipher_block(&cipher, blocksize));
+    let block_a = try!(find_cons_same_cipher_block(&cipher, blocksize));
 
-    let mut ciphers = try!(find_target_ciphers_for_each_byte_shift(&cbox, blocksize, &blockA));
+    let mut ciphers = try!(find_target_ciphers_for_each_byte_shift(&cbox, blocksize, &block_a));
 
-    let (mut plaintext, ord_ciphers, finished) = try!(break_first_block(&cbox, blocksize, &blockA, &mut ciphers));
+    let (mut plaintext, ord_ciphers, finished) = try!(break_first_block(&cbox, blocksize, &block_a, &mut ciphers));
 
     if ! finished {
-        plaintext = try!(break_rem_blocks(&cbox, blocksize, &blockA, &ord_ciphers, &plaintext));
+        plaintext = try!(break_rem_blocks(&cbox, blocksize, &block_a, &ord_ciphers, &plaintext));
     }
 
     println!("");
@@ -46,7 +46,7 @@ pub fn break_aes_ecb(cbox: &cb::CipherBox) -> Result<String, err::Error> {
 // prefix: no prefix + target data
 // total samples = blocksize
 //
-pub fn find_target_ciphers_for_each_byte_shift(cbox: &cb::CipherBox, blocksize: usize, blockA: &Vec<u8>) ->
+pub fn find_target_ciphers_for_each_byte_shift(cbox: &cb::CipherBox, blocksize: usize, block_a: &Vec<u8>) ->
     Result<Vec<Vec<u8>>, err::Error> {
 
     let input = vec![special_input_char as u8; blocksize * 2 - 1];
@@ -59,23 +59,23 @@ pub fn find_target_ciphers_for_each_byte_shift(cbox: &cb::CipherBox, blocksize: 
     
         let mut b = block_iter.next();
         while b != None {
-            if &b.unwrap().to_vec() == blockA {
+            if &b.unwrap().to_vec() == block_a {
                 break;
             }
             b = block_iter.next();
         }
 
-        let mut after_blockA = Vec::<u8>::new();
+        let mut after_block_a = Vec::<u8>::new();
         b = block_iter.next();
 
         while b != None {
-            after_blockA.extend(b.unwrap());
+            after_block_a.extend(b.unwrap());
             b = block_iter.next();
         }
 
-        ctry!(after_blockA.len() < blocksize, "not a valid cipher block after our special input");
+        ctry!(after_block_a.len() < blocksize, "not a valid cipher block after our special input");
 
-        push_if_not_in(&mut ciphers, &after_blockA);
+        push_if_not_in(&mut ciphers, &after_block_a);
         if ciphers.len() == blocksize {
             break;
         }
@@ -102,7 +102,7 @@ pub fn find_target_ciphers_for_each_byte_shift(cbox: &cb::CipherBox, blocksize: 
 //
 // returns: plaintext (blocksize - 1 chars), ordered ciphers
 //
-fn break_first_block<'a>(cbox: &cb::CipherBox, blocksize: usize, blockA: &Vec<u8>, ciphers: &'a mut Vec<Vec<u8>>) ->
+fn break_first_block<'a>(cbox: &cb::CipherBox, blocksize: usize, block_a: &Vec<u8>, ciphers: &'a mut Vec<Vec<u8>>) ->
     Result<(String, &'a Vec<Vec<u8>>, bool), err::Error> {
 
     let mut ord_ciphers = Vec::<Vec<u8>>::new();
@@ -111,8 +111,8 @@ fn break_first_block<'a>(cbox: &cb::CipherBox, blocksize: usize, blockA: &Vec<u8
 
     let valid_chars = ascii::valid_chars();
 
-    for i in 0 .. (blocksize - 1) {
-        let dict = try!(cb::make_dict_for_random_prefix_cb(&prefix, &cbox, &valid_chars, &blockA));
+    for _ in 0 .. (blocksize - 1) {
+        let dict = try!(cb::make_dict_for_random_prefix_cb(&prefix, &cbox, &valid_chars, &block_a));
         
         for j in 0 .. ciphers.len() {
             let block0 = ciphers[j].chunks(blocksize).next().unwrap().to_vec();
@@ -132,7 +132,7 @@ fn break_first_block<'a>(cbox: &cb::CipherBox, blocksize: usize, blockA: &Vec<u8
         }
     }
 
-    let mut finished: bool = ciphers.len() > 1;         //plain text smaller than a blocksize
+    let finished: bool = ciphers.len() > 1;         //plain text smaller than a blocksize
     ciphers.extend(ord_ciphers);
 
     Ok((plaintext, ciphers, finished))
@@ -146,7 +146,7 @@ fn break_first_block<'a>(cbox: &cb::CipherBox, blocksize: usize, blockA: &Vec<u8
 // performs the usual aes ecb attack, char at a time
 // returns: plaintext
 //
-fn break_rem_blocks(cbox: &cb::CipherBox, blocksize: usize, blockA: &Vec<u8>, ord_ciphers: &Vec<Vec<u8>>, partial_plaintext: &str) ->
+fn break_rem_blocks(cbox: &cb::CipherBox, blocksize: usize, block_a: &Vec<u8>, ord_ciphers: &Vec<Vec<u8>>, partial_plaintext: &str) ->
     Result<String, err::Error> {
 
     ctry!(ord_ciphers.len() != blocksize, "ordered ciphers != block size");
@@ -165,7 +165,7 @@ fn break_rem_blocks(cbox: &cb::CipherBox, blocksize: usize, blockA: &Vec<u8>, or
     let valid_chars = ascii::valid_chars();
 
     for i in blocksize - 1 .. rem_plaintext_len + blocksize - 1 {
-        let dict = try!(cb::make_dict_for_random_prefix_cb(&prefix, &cbox, &valid_chars, &blockA));
+        let dict = try!(cb::make_dict_for_random_prefix_cb(&prefix, &cbox, &valid_chars, &block_a));
         
         let cipher_block = ord_ciphers_it.next().unwrap().chunks(blocksize).nth(block_no).unwrap().to_vec();
         
@@ -217,9 +217,8 @@ fn interactive() -> err::ExitCode {
     let mut cbox = rtry!(cb::init_from_file(&input_filepath), exit_err!());
     cbox.enable_random_prefix(max_random_data_length);
 
-    let plaintext = rtry!(break_aes_ecb(&cbox), exit_err!());
+    rtry!(break_aes_ecb(&cbox), exit_err!());
 
-    //println!("{}", plaintext);
     exit_ok!()
 }
 

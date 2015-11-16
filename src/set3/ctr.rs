@@ -1,7 +1,5 @@
-use std::io;
-use std::io::prelude::*;
 
-use common::{err, challenge, ascii, base64};
+use common::{err, challenge, ascii, base64, util};
 use common::cipher::aes;
 
 
@@ -15,19 +13,18 @@ pub static info: challenge::Info = challenge::Info {
 
 
 pub fn ctr_crypt(input_b64: &str, key: &str) -> Result<String, err::Error> {
-    let mut ctr = aes::CTR::new(&raw!(&key), 0);
+    let ctr = aes::CTR::new(&raw!(&key), 0);
     Ok(rts!(&try!(ctr.gen(&b64d!(&input_b64)))))
 }
 
 
 pub fn interactive() -> err::ExitCode {
-    let mut input_b64 = String::new();
-    input!("enter input (base64): ", &mut input_b64);
+    let input_b64 = rtry!(util::input("enter input (base64)"), exit_err!());
     
-    let mut key = String::new();
-    input!("enter key", &mut key, "YELLOW SUBMARINE");
+    let key = rtry!(util::input_d("enter key", "YELLOW SUBMARINE"), exit_err!());
 
     let output = rtry!(ctr_crypt(&input_b64.trim(), &key.trim()), exit_err!());
+
     println!("{}", output);
    
     exit_ok!()

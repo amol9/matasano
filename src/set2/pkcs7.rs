@@ -1,8 +1,6 @@
-use std::io;
-use std::io::prelude::*;
 
 use common::cipher::padding;
-use common::{challenge, err};
+use common::{challenge, err, util, ascii};
 
 
 pub static info: challenge::Info = challenge::Info {
@@ -15,20 +13,15 @@ pub static info: challenge::Info = challenge::Info {
 
 
 pub fn interactive() -> err::ExitCode {
-    let mut text = String::new();
-    input!("enter text: ", &mut text);
+    let text = rtry!(util::input("enter text"), exit_err!());
 
-    let mut bsize = String::new();
-    input!("enter block size: ", &mut bsize);
+    let bsize = rtry!(util::input("enter block size"), exit_err!());
 
-    let blocksize = match bsize.trim().parse::<usize>() {
-        Ok(v)   => v,
-        Err(e)  => { println!("{}", e); return exit_err!(); }
-    };
+    let blocksize = rtry!(bsize.trim().parse::<usize>(), exit_err!());
 
-    text = String::from(text.trim());
-    rtry!(padding::pkcs7(&mut text, blocksize), exit_err!());
+    let ptext = rrts!(&rtry!(padding::pkcs7_pad(&rraw!(text.trim()), blocksize), exit_err!()));
 
-    padding::print_pkcs7(&text, blocksize);
+    rtry!(padding::print_pkcs7(&ptext, blocksize), exit_err!());
+
     exit_ok!()
 }

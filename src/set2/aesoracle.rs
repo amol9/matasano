@@ -1,10 +1,7 @@
-use std::io;
-use std::io::prelude::*;
-
 extern crate rand;
 use self::rand::Rng;
 
-use common::{err, challenge};
+use common::{err, challenge, util};
 use common::cipher::{aes, oracle, key};
 
 
@@ -62,10 +59,10 @@ pub fn detect_aes_mode(sample_count: usize) -> Result<(usize, usize), err::Error
 
 
 pub fn interactive() -> err::ExitCode {
-    let mut s = String::new();
-    input!("enter sample count: ", &mut s);
+    let sample_count_str = rtry!(util::input("enter sample count"), exit_err!());
 
-    let sample_count = rtry!(s.trim().parse::<usize>(), exit_err!());
+    let sample_count = rtry!(sample_count_str.trim().parse::<usize>(), exit_err!());
+
     let (success, failure) = rtry!(detect_aes_mode(sample_count), exit_err!());
 
     println!("tried {} samples: success: {}, failure: {}", sample_count, success, failure);

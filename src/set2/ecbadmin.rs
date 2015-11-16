@@ -1,5 +1,5 @@
 
-use common::{err, ascii, base64, util, challenge, url};
+use common::{err, ascii, challenge, url};
 use common::cipher::{aes, key, padding};
 
 
@@ -111,7 +111,7 @@ pub fn auth_as_admin(authbox: &AuthBox) -> Result<bool, err::Error> {
 
     email_name = String::from("a");
 
-    let len_upto_role = ("email=".len() + email_name.len() + 1 + email_domain.len() + "&uid=10&role=".len());
+    let len_upto_role = "email=".len() + email_name.len() + 1 + email_domain.len() + "&uid=10&role=".len();
     let email_padsize = (blocksize - (len_upto_role % blocksize)) % blocksize;
 
     email_name.push_str(strn!('a', email_padsize).as_ref());

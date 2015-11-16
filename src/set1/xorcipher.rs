@@ -1,8 +1,5 @@
-use std::env;
-use std::io;
-use std::io::Write;
 
-use common::{err, charfreq, challenge, ascii, hex};
+use common::{err, challenge, ascii, hex, util};
 use common::cipher::one_byte_xor as obx;
 
 
@@ -15,8 +12,7 @@ pub static info: challenge::Info = challenge::Info {
 
 
 pub fn interactive() -> err::ExitCode {
-    let mut input = String::new();
-    input!("enter the hex string to be deciphered: ", &mut input);
+    let input = rtry!(util::input("enter the hex string to be deciphered"), exit_err!());
 
     match obx::guess_key(&rtry!(hex::hex_to_raw(input.trim()), exit_err!()), None) {
         Ok(v)   => {

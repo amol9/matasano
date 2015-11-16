@@ -1,7 +1,5 @@
-use std::io;
-use std::io::Write;
 
-use common::{err, hex, xor, challenge};
+use common::{err, hex, xor, challenge, util};
 
 
 pub static info: challenge::Info = challenge::Info {
@@ -13,7 +11,7 @@ pub static info: challenge::Info = challenge::Info {
 
 
 pub fn xor_hex(x: &str, y: &str) -> Result<String, err::Error> {
-	if (x.len() != y.len()) {
+	if x.len() != y.len() {
 		return Err(err::make_error(String::from("unequal number of hex digits")));
 	}
 
@@ -28,11 +26,9 @@ pub fn xor_hex(x: &str, y: &str) -> Result<String, err::Error> {
 
 
 pub fn interactive() -> err::ExitCode {
-	let mut x: String = String::new();
-	input!("enter first hex number: ", &mut x);
+	let x: String = rtry!(util::input("enter first hex number"), exit_err!());
 
-	let mut y: String = String::new();
-	input!("enter second hex number: ", &mut y);
+	let y: String = rtry!(util::input("enter second hex number"), exit_err!());
 
 	match xor_hex(&x.trim(), &y.trim()) {
 		Ok(v)	=> { println!("xor result: {}", v); exit_ok!() },

@@ -1,8 +1,6 @@
-use std::char;
-use std::f32;
 use std::slice;
 
-use common::{err, ascii, hex, charfreq, util};
+use common::{err, ascii, charfreq, util};
 
 
 pub struct Guess {
@@ -49,8 +47,8 @@ pub fn guess_key(cipher: &Vec<u8>, opt_options: Option<&GuessOptions>) -> Result
     })
 }
 
-pub type distance_fn_type = fn (&str) -> Result<f32, err::Error>;
-pub type weight_fn_type = fn(f32, f32) -> f32;
+pub type FnDistance = fn (&str) -> Result<f32, err::Error>;
+pub type FnWeight = fn(f32, f32) -> f32;
 
 
 pub struct GuessOptions<'a> {
@@ -58,8 +56,8 @@ pub struct GuessOptions<'a> {
     weights:        Option<&'a Vec<f32>>,
     start:          Option<u8>,
     end:            Option<u8>,
-    distance_fn:    distance_fn_type,
-    weight_fn:      weight_fn_type
+    distance_fn:    FnDistance,
+    weight_fn:      FnWeight 
 }
 
 impl<'a> GuessOptions<'a> {
@@ -96,11 +94,11 @@ impl<'a> GuessOptions<'a> {
         Ok(())
     }
 
-    pub fn set_distance_fn(&mut self, distance_fn: distance_fn_type) {
+    pub fn set_distance_fn(&mut self, distance_fn: FnDistance) {
         self.distance_fn = distance_fn;
     }
 
-    pub fn set_weight_fn(&mut self, weight_fn: weight_fn_type) {
+    pub fn set_weight_fn(&mut self, weight_fn: FnWeight) {
         self.weight_fn = weight_fn; 
     }
 

@@ -112,7 +112,6 @@ pub fn guess_key_length(cipherraw: &Vec<u8>, guess_count: usize) -> Result<Vec<u
             bc += 1;
         }
         dist.push(d_avg.unwrap() as f32 / block_len as f32);
-        d_avg = None;
     }
     //for i in 0 .. dist.len() {
     //    println!("{}: {}", i, dist[i]);

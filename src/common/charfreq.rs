@@ -1,6 +1,5 @@
 use std::fs::File;
 use std::io::prelude::{Read, Write};
-use std::f32;
 use std::fs;
 use std::env;
 
@@ -25,7 +24,7 @@ pub fn generate_base_frequency_file(sample_filepath: &str) -> Result<(), err::Er
 
     for freq in base_freq {
         let out = try!(ascii::str_to_raw(&format!("{}\n", freq)));
-        f.write(&out);
+        etry!(f.write(&out), "error writing to base frequency file");
     }
     println!("base frequency file generated..");
     Ok(())
@@ -51,7 +50,7 @@ pub fn compute_char_frequency(text: &str) -> Result<Vec<f32>, err::Error> {
 pub fn get_base_freq() -> Result<Vec<f32>, err::Error> {
     match fs::metadata(&BASE_FREQ_FILENAME) {
         Ok(_)   => {}, 
-        Err(e)  => return mkerr!("base frequency file not found, please generate it using option: \"charfreq <sample text filepath>\"")
+        Err(e)  => etry!(Err(e), "base frequency file not found, please generate it using option: \"charfreq <sample text filepath>\"")
     };
 
     let mut f = etry!(File::open(BASE_FREQ_FILENAME), "could not open base frequency file");

@@ -1,6 +1,5 @@
 use std::env;
 use std::slice;
-use std::io;
 use std::io::prelude::*;
 
 use common::{err, challenge, ascii, base64, util, charfreq};
@@ -42,13 +41,10 @@ pub fn break_ctr(ciphers: &Vec<Vec<u8>>) -> Result<Vec<u8>, err::Error> {
     let mut tri_c_it = tri_c.iter();            // iterator over corresponding lists of cipher characters    
 
     let mut all_ciphers_done = false;
-    let mut col_no = 0;
 
     while !all_ciphers_done {
-        //println!("col no: {}", col_no);
-        col_no += 1;
-
         let mut col = Vec::<u8>::new();         // extract a column
+
         for it in cipher_its.iter_mut() {
             match it.next() {
                 Some(v) => col.push(*v),
@@ -175,7 +171,7 @@ fn filter_candidates_for_last_chars(ciphers: &Vec<Vec<u8>>, keystream: &Vec<u8>)
     //    println!("({}, {}), {}", (i.0).0, (i.0).1, i.1);
     //}
                                                             // only take the first "n" candidate keys
-    let (mut result, mut weights): (Vec<u8>, Vec<u32>) = (0 .. trigrams_key_limit).zip(r2).map(|(_, t)| ((t.0).0, (t.0).1)).unzip();
+    let (result, mut weights): (Vec<u8>, Vec<u32>) = (0 .. trigrams_key_limit).zip(r2).map(|(_, t)| ((t.0).0, (t.0).1)).unzip();
     if ! not_enough_prefixes {
         weights.clear();
     } 
@@ -334,7 +330,7 @@ pub fn manual_guess_for_last_chars(ciphers: &Vec<Vec<u8>>, auto_guess_keystream:
     } else {                            // interact with user
         display(&plains);
 
-        while true {
+        loop {
             let user_input = try!(util::input("enter guess (line no, last chars) [blank to exit]: "));
 
             if user_input.trim() == "" {

@@ -3,7 +3,7 @@ use std::io;
 use std::io::Write;
 
 use common::{err, ascii, util, challenge};
-use common::cipher::{aes, oracle};
+use common::cipher::oracle;
 use common::cipher::cipherbox as cb;
 
 
@@ -50,8 +50,7 @@ pub fn break_aes_ecb(cbox: &cb::CipherBox) -> Result<String, err::Error> {
         for j in 0 .. dict.len() {
             if dict[j] == cipher_block {
                 raw_char = j as u8 + 1;
-                print!("{}", raw_char as char);
-                io::stdout().flush();
+                printc!(raw_char as char);
             }
         }
         ctry!(raw_char == 0, format!("no match for character at pos: {} \n{}", i, try!(ascii::raw_to_str(&plainraw))));
@@ -75,7 +74,7 @@ pub fn detect_blocksize_plainsize(cbox: &cb::CipherBox, max: usize) -> Result<(u
     let len1 = try!(cbox.encrypt(&Vec::<u8>::new())).len();
 
     let mut prefix = vec![65 as u8];
-    for i in 0 .. max {
+    for _ in 0 .. max {
         let len2 = try!(cbox.encrypt(&prefix)).len();
         if len2 > len1 {
             return Ok((len2 - len1, len1 - prefix.len() + 1));
@@ -93,9 +92,8 @@ pub fn interactive() -> err::ExitCode {
     };
 
     let cbox = rtry!(cb::init_from_file(&input_filepath), exit_err!());
-    let plaintext = rtry!(break_aes_ecb(&cbox), exit_err!());
+    rtry!(break_aes_ecb(&cbox), exit_err!());
 
-    //println!("{}", plaintext);
     exit_ok!()
 }
 

@@ -1,8 +1,7 @@
-use std::slice;
 use std::cell::RefCell;
 
 extern crate crypto;
-use self::crypto::{symmetriccipher, buffer, aes, blockmodes};
+use self::crypto::{buffer, aes, blockmodes};
 use self::crypto::symmetriccipher::Decryptor;
 use self::crypto::buffer::{ReadBuffer, WriteBuffer, BufferResult};
 
@@ -39,8 +38,8 @@ const Ctr: Cipher = Cipher {
 
 #[derive(PartialEq)]
 pub enum BlockMode {
-    ecb,
-    cbc
+    Ecb,
+    Cbc
 }
 
 
@@ -86,7 +85,7 @@ pub const ecb_128_pkcs7: Mode = Mode {
     blocksize:  Some(16),
     padding:    Some(padding::Pkcs7),
     cipher:     Ecb,
-    blockmode:  Some(BlockMode::ecb)
+    blockmode:  Some(BlockMode::Ecb)
 };
 
 
@@ -95,7 +94,7 @@ pub const cbc_128_pkcs7: Mode = Mode {
     blocksize:  Some(16),
     padding:    Some(padding::Pkcs7),
     cipher:     Cbc,
-    blockmode:  Some(BlockMode::cbc)
+    blockmode:  Some(BlockMode::Cbc)
 };
 
 
@@ -109,8 +108,8 @@ pub const ctr_128: Mode = Mode {
 
 
 pub fn encrypt(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, err::Error> {
-    let mut result: Vec<u8>;
-    if mode.blockmode == Some(BlockMode::ecb) {
+    let result: Vec<u8>;
+    if mode.blockmode == Some(BlockMode::Ecb) {
         let padded = try!(mode.pad(&input));
         result = try!(mode.encrypt(&padded, &key));
     } else {
@@ -123,7 +122,7 @@ pub fn encrypt(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, e
 
 pub fn decrypt(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, err::Error> {
     let result = try!(mode.decrypt(input, key));
-    if mode.blockmode == Some(BlockMode::ecb) {
+    if mode.blockmode == Some(BlockMode::Ecb) {
         return mode.unpad(&result);
     }
     Ok(result)
@@ -179,8 +178,8 @@ pub fn decrypt_ecb(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8
 
 
 pub fn encrypt_cbc(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, err::Error> {
-    let mut block_cipher = try!(iv(&key, &mode));
-    let mut input_iter = input.chunks(mode.blocksize.unwrap());
+    let mut block_cipher = try!(iv(&mode));
+    let input_iter = input.chunks(mode.blocksize.unwrap());
     let last_block = input.chunks(mode.blocksize.unwrap()).next_back().unwrap();
 
     let mut output = Vec::<u8>::new();
@@ -202,7 +201,7 @@ pub fn encrypt_cbc(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8
 }
 
 
-pub fn iv(key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, err::Error> {
+pub fn iv(mode: &Mode) -> Result<Vec<u8>, err::Error> {
     let mut rng = rand::thread_rng();
     let iv: Vec<u8> = (0 .. mode.blocksize.unwrap()).map(|_| rng.gen::<u8>()).collect();
     Ok(iv)
@@ -297,8 +296,9 @@ impl CTR {
 }
 
 
+#[allow(unused_variables)]
 pub fn edcrypt_ctr(input: &Vec<u8>, key: &Vec<u8>, mode: &Mode) -> Result<Vec<u8>, err::Error> {
-    let mut ctr = CTR::new(&key, 0);
+    let ctr = CTR::new(&key, 0);
     ctr.gen(&input)
 }
 

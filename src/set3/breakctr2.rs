@@ -1,11 +1,9 @@
 use std::env;
 use std::slice;
-use std::io;
 use std::io::prelude::*;
 
-use common::{err, challenge, ascii, base64, util, charfreq};
+use common::{err, challenge};
 use common::cipher::one_byte_xor as obx;
-use common::cipher::aes;
 use set3::breakctr;
 
 

@@ -1,9 +1,7 @@
-use std::io;
-use std::fs;
 use std::env;
 use std::f32;
 
-use common::{err, util, challenge, ascii, hex};
+use common::{err, util, challenge, hex};
 use common::cipher::one_byte_xor as obx;
 
 

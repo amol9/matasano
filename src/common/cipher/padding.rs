@@ -17,30 +17,25 @@ pub fn pkcs7(input: &mut String, blocksize: usize) -> Result<(), err::Error> {
     Ok(())
 }
 
-
 pub trait Pad {
     fn pad(block: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Error>;
     fn unpad(block: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Error>;
 }
-
 
 pub struct Mode {
     pub pad_fn:     fn (&Vec<u8>, usize) -> Result<Vec<u8>, err::Error>,
     pub unpad_fn:   fn (&Vec<u8>, usize) -> Result<Vec<u8>, err::Error>
 }
 
-
 pub const Pkcs7: Mode = Mode {
     pad_fn:     pkcs7_pad,
     unpad_fn:   pkcs7_unpad
 };
 
-
 pub const NoPadding: Mode = Mode {
     pad_fn:     no_pad,
     unpad_fn:   no_unpad
 };
-
 
 //takes in raw and returns padded copy
 pub fn pkcs7_pad(block: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Error> {
@@ -59,7 +54,6 @@ pub fn pkcs7_pad(block: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Erro
     Ok(result)
 }
 
-
 pub fn pkcs7_unpad(block: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Error> {
     let padsize = try!(pkcs7_detect(&block, blocksize));
     //println!("padsize: {}", padsize);
@@ -69,17 +63,16 @@ pub fn pkcs7_unpad(block: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Er
     Ok(result)
 }
 
-
 //no padding, just returns the same block
+#[allow(unused_variables)]
 pub fn no_pad(block: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Error> {
     Ok(block.clone())
 }
 
-
+#[allow(unused_variables)]
 pub fn no_unpad(block: &Vec<u8>, blocksize: usize) -> Result<Vec<u8>, err::Error> {
     Ok(block.clone())
 }
-
 
 pub fn pkcs7_detect(block: &Vec<u8>, blocksize: usize) -> Result<usize, err::Error> {
     ctry!(block.len() == 0, "pkcs7 error: empty block");
@@ -105,7 +98,6 @@ pub fn pkcs7_detect(block: &Vec<u8>, blocksize: usize) -> Result<usize, err::Err
     }
     Ok(padsize)
 }
-
 
 pub fn print_pkcs7(paddedtext: &str, blocksize: usize) -> Result<(), err::Error> {
     let padsize = try!(pkcs7_detect(&paddedtext.as_bytes().to_vec(), blocksize));
