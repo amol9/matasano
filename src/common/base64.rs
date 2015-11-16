@@ -155,7 +155,7 @@ pub fn hex_to_base64(input: &str) -> Result<String, err::Error> {
 		Ok(v)	=> Ok(v),
 		Err(e)	=> Err(err::make_error(String::from("error"))),
 	}
-    Ok(try!(raw_to_base64(
+    //Ok(try!(raw_to_base64(
 }
 
 
