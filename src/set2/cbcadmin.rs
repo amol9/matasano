@@ -29,8 +29,8 @@ impl AuthBox {
 
         for c in escape_chars.iter() {
             let mut chex = String::from("%");
-            chex.push(try!(hex::u8_to_hex_char::<hex::upper>(*c as u8 >> 4)));
-            chex.push(try!(hex::u8_to_hex_char::<hex::upper>(*c as u8 & 0xF)));
+            chex.push(try!(hex::u8_to_hex_char::<hex::Upper>(*c as u8 >> 4)));
+            chex.push(try!(hex::u8_to_hex_char::<hex::Upper>(*c as u8 & 0xF)));
             escape_map.insert(c.to_string(), chex);
         }
 

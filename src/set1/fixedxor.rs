@@ -20,7 +20,7 @@ pub fn xor_hex(x: &str, y: &str) -> Result<String, err::Error> {
 
 	let rr: Vec<u8> = try!(xor::xor(&rx, &ry));
 
-	let result = try!(hex::raw_to_hex::<hex::lower>(&rr));
+	let result = try!(hex::raw_to_hex::<hex::Lower>(&rr));
 	Ok(result)
 }
 

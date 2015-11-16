@@ -1,5 +1,3 @@
-use std::cmp;
-use std::iter;
 use std::io;
 use std::io::prelude::*;
 use std::fs::File;
@@ -8,7 +6,7 @@ use std::fs;
 use common::err;
 
 
-const F32_ZERO: f32 = 1.0e-40_f32;
+//const F32_ZERO: f32 = 1.0e-40_f32;
 
 
 pub fn min_index<T: PartialOrd>(list: &Vec<T>) -> Option<usize> {
@@ -32,7 +30,7 @@ pub fn min_indices<T: PartialOrd>(list: &Vec<T>, count: usize) -> Option<Vec<usi
     let mut result = Vec::new();
     //let result_contains = |idx| 
 
-    for c in 0 .. count {
+    for _ in 0 .. count {
         let mut min_value = None;
         let mut min_index: usize = 0;
 
@@ -52,30 +50,6 @@ pub fn min_indices<T: PartialOrd>(list: &Vec<T>, count: usize) -> Option<Vec<usi
     }
     Some(result)
 }
-
-
-/*macro_rules! input {
-    ( $msg: expr, $str: expr ) => ( 
-        print!($msg);
-        rtry!(io::stdout().flush(), 1);
-        io::stdin().read_line($str);
-    );
-    
-    ( $msg: expr, $str: expr, $default: expr ) => ( 
-        {
-            print!("{} [{}]: ", $msg, $default);
-            rtry!(io::stdout().flush(), 1);
-            let r = io::stdin().read_line($str);
-            match r {
-                Ok(n)  => if n == 1 {
-                    (*$str).clear();
-                    (*$str).push_str($default)
-                },
-                Err(e) => {}
-            };
-        }
-    );
-}*/
 
 pub fn input(msg: &str) -> Result<String, err::Error> {
     print!("{}: ", msg);
@@ -107,7 +81,7 @@ pub fn input_d(msg: &str, default: &str) -> Result<String, err::Error> {
 
 pub fn read_file_to_str(filepath: &str) -> Result<String, err::Error> {
     match fs::metadata(&filepath) {
-        Ok(v)   => {},
+        Ok(_)   => {},
         Err(e)  => etry!(Err(e), format!("{} not found", filepath)),
     };
 

@@ -5,7 +5,7 @@ use self::matasano::common::{base64, hex, ascii};
 #[test]
 fn test_str_to_base64() {
     let i = s!("ab");
-    println!("{}", m!(base64::raw_to_base64(m!(ascii::str_to_raw(&i)))));
+    println!("{}", m!(base64::raw_to_base64(&m!(ascii::str_to_raw(&i)))));
 }
 
 

@@ -25,6 +25,7 @@ impl error::Error for Error {
 
 
 impl fmt::Display for Error {
+    #[allow(unused_variables)]
 	fn fmt(&self, fmtr: &mut fmt::Formatter) -> Result<(), fmt::Error> {
 		println!("{}", self.cause);
 		Ok(())

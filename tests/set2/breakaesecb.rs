@@ -22,7 +22,7 @@ fn test_cryptopals_case() {
 fn test_more() {
     fn test(plain: &str) {
         let raw = m!(ascii::str_to_raw(&plain));
-        let b64 = m!(base64::raw_to_base64(raw));
+        let b64 = m!(base64::raw_to_base64(&raw));
         let cbox = m!(cb::init(&b64));
         let p = m!(bae::break_aes_ecb(&cbox));
         assert_eq!(p, plain);

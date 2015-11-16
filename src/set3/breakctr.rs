@@ -269,7 +269,7 @@ pub fn generate_ciphers_from_file(filepath: &str) -> Result<Vec<Vec<u8>>, err::E
     let mut ciphers = Vec::<Vec<u8>>::new();
 
     for line in text.lines() {
-        ciphers.push(try!(cbox.encrypt(&b64d!(&line))));
+        ciphers.push(try!(cbox.encrypt(&b64tr!(&line))));
     }
     Ok(ciphers)
 }

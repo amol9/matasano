@@ -1,5 +1,4 @@
 use std::char;
-use std::io;
 
 use common::{err, hex};
 
@@ -26,7 +25,6 @@ fn u8_to_base64(index: u8) -> Result<char, err::Error> {
 	}
 }
 
-
 fn base64_to_u8(b64char: char) -> Result<u8, err::Error> {
     let r = match b64char as u8 {
         65 ... 90   => b64char as u8 - 65,
@@ -39,22 +37,21 @@ fn base64_to_u8(b64char: char) -> Result<u8, err::Error> {
     Ok(r)
 }
 
-
-pub fn raw_to_base64(input: Vec<u8>) -> Result<String, err::Error> {
+pub fn raw_to_base64(input: &Vec<u8>) -> Result<String, err::Error> {
 	let mut index: usize	= 0;
 	let mut v		= Vec::new();
 	let mut output		= String::new();
 	let mut pad: usize	= 0;
 
 	while index < input.len() {
-		if (index + 3 > input.len()) {
+		if index + 3 > input.len() {
 			pad =  (index + 3) - input.len();
 
 			for i in 0..(3-pad) {
 				v.push(input[index+i]);
 			}
 
-			for i in 0..pad {
+			for _ in 0..pad {
 				v.push(0);
 			}
 
@@ -97,9 +94,8 @@ pub fn raw_to_base64(input: Vec<u8>) -> Result<String, err::Error> {
 		v.clear();
 	}
 				
-	return Ok(output);
+	Ok(output)
 }
-
 
 pub fn base64_to_raw(input: &str) -> Result<Vec<u8>, err::Error> {
     let mut buf: Vec<char> = Vec::new();
@@ -108,7 +104,7 @@ pub fn base64_to_raw(input: &str) -> Result<Vec<u8>, err::Error> {
     for b64char in input.chars() {
         buf.push(b64char);
 
-        if (buf.len() == 4 && b64char != '=') {
+        if buf.len() == 4 && b64char != '=' {
             let b1 = try!(base64_to_u8(buf[0])); 
             let b2 = try!(base64_to_u8(buf[1])); 
             let b3 = try!(base64_to_u8(buf[2])); 
@@ -140,26 +136,11 @@ pub fn base64_to_raw(input: &str) -> Result<Vec<u8>, err::Error> {
     Ok(output)
 }
 
-
 pub fn hex_to_base64(input: &str) -> Result<String, err::Error> {
-	let r: Result<Vec<u8>, err::Error> = hex::hex_to_raw(input);
-
-	let raw: Vec<u8> = match r {
-		Ok(v)	=> v,
-		Err(e)	=> return Err(err::make_error(String::from(e))),
-	};
-
-	let r: Result<String, err::Error> = raw_to_base64(raw);
-
-	match r {
-		Ok(v)	=> Ok(v),
-		Err(e)	=> Err(err::make_error(String::from("error"))),
-	}
-    //Ok(try!(raw_to_base64(
+    Ok(try!(raw_to_base64(&try!(hex::hex_to_raw(&input)))))
 }
 
-
-macro_rules! b64d {
+macro_rules! b64tr {
     ( $x : expr ) => ( try! ( base64::base64_to_raw( $x ) ) );
 }
 

@@ -34,7 +34,7 @@ macro_rules! htr_err {
 
 
 macro_rules! _rth {
-	( $x:expr, $y:expr, $z: expr ) => ( _gen!($x, $y, $z, hex::raw_to_hex::<hex::lower>));
+	( $x:expr, $y:expr, $z: expr ) => ( _gen!($x, $y, $z, hex::raw_to_hex::<hex::Lower>));
 }
 
 macro_rules! rth {

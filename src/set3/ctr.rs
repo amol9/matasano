@@ -14,7 +14,7 @@ pub static info: challenge::Info = challenge::Info {
 
 pub fn ctr_crypt(input_b64: &str, key: &str) -> Result<String, err::Error> {
     let ctr = aes::CTR::new(&raw!(&key), 0);
-    Ok(rts!(&try!(ctr.gen(&b64d!(&input_b64)))))
+    Ok(rts!(&try!(ctr.gen(&b64tr!(&input_b64)))))
 }
 
 
