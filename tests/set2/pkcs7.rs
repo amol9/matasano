@@ -1,23 +1,24 @@
 
 use matasano::common::cipher::padding;
+use matasano::common::ascii;
 
 
 macro_rules! padpkcs7 {
     ( $x: expr, $bs: expr, $exp: expr ) => ({ 
-        let mut text = s!($x);
-        m!(padding::pkcs7(&mut text, $bs));
-        assert_eq!(text, $exp);
+        let text = $x;
+        let ptext = rts!(&m!(padding::pkcs7_pad(&raw!(&text), $bs)));
+        assert_eq!(ptext, $exp);
     });
 }
 
 
 #[test]
 fn test_cryptopals_case() {
-    let mut text = s!("YELLOW SUBMARINE");
-    m!(padding::pkcs7(&mut text, 20));
+    let text = "YELLOW SUBMARINE";
+    let ptext = rts!(&m!(padding::pkcs7_pad(&raw!(&text), 20)));
 
-    padding::print_pkcs7(&text, 20);
-    assert_eq!(text, "YELLOW SUBMARINE\x04\x04\x04\x04");
+    m!(padding::print_pkcs7(&ptext, 20));
+    assert_eq!(ptext, "YELLOW SUBMARINE\x04\x04\x04\x04");
 }
 
 

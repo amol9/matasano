@@ -23,8 +23,8 @@ fn test_break() {
         Some(cipher)
     }
 
-    let text = m!(util::read_file_to_str(&s!("data/prob-6.txt")));
-    let cipher = enc(&text, &s!("key")).unwrap();
+    let text = m!(util::read_file_to_str("data/prob-6.txt"));
+    let cipher = enc(&text, "key").unwrap();
     let guess = m!(brx::break_cipher(&cipher));
 
     println!("key: {}\n\n {}", guess.key, guess.text);

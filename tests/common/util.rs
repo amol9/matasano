@@ -33,7 +33,7 @@ fn test_hamming_distance() {
 
 macro_rules! hammv {
     ( $x : expr, $y : expr ) => ( m!(
-            util::hamm_vec(&m!(ascii::str_to_raw(&s!($x))), &m!(ascii::str_to_raw(&s!($y))))) );
+            util::hamm_vec(&m!(ascii::str_to_raw($x)), &m!(ascii::str_to_raw($y)))) );
 }
 
 
@@ -52,8 +52,8 @@ fn test_transpose_vec() {
 
 #[test]
 fn test_transpose_str() {
-    let input = s!("abcdabcdabcdabcdabc");
-    assert_eq!(m!(util::transpose_str(&input, 4)), vec![s!("aaaaa"), s!("bbbbb"), s!("ccccc"), s!("dddd")]);
+    let input = "abcdabcdabcdabcdabc";
+    assert_eq!(m!(util::transpose_str(&input, 4)), vec!["aaaaa", "bbbbb", "ccccc", "dddd"]);
 }
 
 

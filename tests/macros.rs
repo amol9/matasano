@@ -1,8 +1,3 @@
-//macro to make a string
-macro_rules! s {
-	( $x : expr ) => ( String::from($x) );
-}
-
 
 //macro to check result
 macro_rules! m {

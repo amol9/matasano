@@ -48,25 +48,25 @@ macro_rules! rth_err {
 
 #[test]
 fn test_hex_to_raw() {
-	htr!(&s!("00"), vec![0]);
-	htr!(&s!("ff"), vec![255]);
-	htr!(&s!("aa"), vec![170]);
-	htr!(&s!("aaff"), vec![170, 255]);
+	htr!("00", vec![0]);
+	htr!("ff", vec![255]);
+	htr!("aa", vec![170]);
+	htr!("aaff", vec![170, 255]);
 
-	htr_err!(&s!("0"), vec![]);
-	htr_err!(&s!("000"), vec![]);
-	htr_err!(&s!("0s"), vec![]);
+	htr_err!("0", vec![]);
+	htr_err!("000", vec![]);
+	htr_err!("0s", vec![]);
 }
 
 
 #[test]
 fn test_raw_to_hex() {
-	rth!(&vec![0], s!("00"));
-	rth!(&vec![255], s!("ff"));
-	rth!(&vec![170], s!("aa"));
-	rth!(&vec![170, 255], s!("aaff"));
+	rth!(&vec![0], "00");
+	rth!(&vec![255], "ff");
+	rth!(&vec![170], "aa");
+	rth!(&vec![170, 255], "aaff");
 
-	//rth_err!(&vec![345], s!(""));
-	//rth_err!(&vec![256], s!(""));
-	//rth_err!(&vec![0x0], s!(""));
+	//rth_err!(&vec![345], "");
+	//rth_err!(&vec![256], "");
+	//rth_err!(&vec![0x0], "");
 }	

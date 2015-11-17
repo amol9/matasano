@@ -4,16 +4,17 @@ use self::matasano::common::{base64, hex, ascii};
 
 #[test]
 fn test_str_to_base64() {
-    let i = s!("ab");
+    let i = "ab";
     println!("{}", m!(base64::raw_to_base64(&m!(ascii::str_to_raw(&i)))));
 }
 
 
 #[test]
 fn test_base64_to_str() {
-    assert_eq!(m!(ascii::raw_to_str(&m!(base64::base64_to_raw(&s!("aGVsbG8gYmFzZTY0ICEhIQ=="))))), s!("hello base64 !!!"));
-    assert_eq!(m!(ascii::raw_to_str(&m!(base64::base64_to_raw(&s!("aGVsbG8="))))), s!("hello"));
-    assert_eq!(m!(ascii::raw_to_str(&m!(base64::base64_to_raw(&s!("aGkgdGhlcmUg"))))), s!("hi there "));
-    assert_eq!(m!(ascii::raw_to_str(&m!(base64::base64_to_raw(&s!("YQ=="))))), s!("a"));
-    assert_eq!(m!(ascii::raw_to_str(&m!(base64::base64_to_raw(&s!("YWI="))))), s!("ab"));
+    assert_eq!(m!(ascii::raw_to_str(&m!(base64::base64_to_raw("aGVsbG8gYmFzZTY0ICEhIQ==")))), "hello base64 !!!");
+    assert_eq!(m!(ascii::raw_to_str(&m!(base64::base64_to_raw("aGVsbG8=")))), "hello");
+    assert_eq!(m!(ascii::raw_to_str(&m!(base64::base64_to_raw("aGkgdGhlcmUg")))), "hi there ");
+    assert_eq!(m!(ascii::raw_to_str(&m!(base64::base64_to_raw("YQ==")))), "a");
+    assert_eq!(m!(ascii::raw_to_str(&m!(base64::base64_to_raw("YWI=")))), "ab");
 }
+
