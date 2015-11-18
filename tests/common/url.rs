@@ -4,12 +4,12 @@ use matasano::common::url;
 
 #[test]
 fn test_encode() {
-    assert_eq!(m!(url::encode(&vec![("a", "test"), ("b", "10"), ("c", "something")])), "a=test&b=10&c=something");
+    assert_eq!(r!(url::encode(&vec![("a", "test"), ("b", "10"), ("c", "something")])), "a=test&b=10&c=something");
 }
 
 #[test]
 fn test_decode() {
-    let result = m!(url::decode("a=test&b=10&c=something"));
+    let result = r!(url::decode("a=test&b=10&c=something"));
     let exp = vec![("a", "test"), ("b", "10"), ("c", "something")];
 
     assert_eq!(result.len(), exp.len());

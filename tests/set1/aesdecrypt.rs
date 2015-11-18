@@ -4,7 +4,7 @@ use matasano::set1::aesdecrypt as ad;
 
 #[test]
 fn test_cryptopals_case() {
-    let plain = m!(ad::decrypt_from_file("data/7.txt", "YELLOW SUBMARINE"));
+    let plain = r!(ad::decrypt_from_file("data/7.txt", "YELLOW SUBMARINE"));
 
     let exp_prefix: &str = "I'm back and I'm ringin' the bell \n\
                             A rockin' on the mike while the fly girls yell \n\

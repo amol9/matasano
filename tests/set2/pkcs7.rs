@@ -6,7 +6,7 @@ use matasano::common::ascii;
 macro_rules! padpkcs7 {
     ( $x: expr, $bs: expr, $exp: expr ) => ({ 
         let text = $x;
-        let ptext = rts!(&m!(padding::pkcs7_pad(&raw!(&text), $bs)));
+        let ptext = rts!(&r!(padding::pkcs7_pad(&raw!(&text), $bs)));
         assert_eq!(ptext, $exp);
     });
 }
@@ -15,9 +15,9 @@ macro_rules! padpkcs7 {
 #[test]
 fn test_cryptopals_case() {
     let text = "YELLOW SUBMARINE";
-    let ptext = rts!(&m!(padding::pkcs7_pad(&raw!(&text), 20)));
+    let ptext = rts!(&r!(padding::pkcs7_pad(&raw!(&text), 20)));
 
-    m!(padding::print_pkcs7(&ptext, 20));
+    r!(padding::print_pkcs7(&ptext, 20));
     assert_eq!(ptext, "YELLOW SUBMARINE\x04\x04\x04\x04");
 }
 

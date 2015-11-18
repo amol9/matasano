@@ -11,20 +11,20 @@ fn test_cryptopals_case() {
                     dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg\
                     YnkK";
 
-    let cbox = m!(cb::init(&plainb64));
-    let plain = m!(bae::break_aes_ecb(&cbox));
+    let cbox = r!(cb::init(&plainb64));
+    let plain = r!(bae::break_aes_ecb(&cbox));
 
-    assert_eq!(plain, m!(ascii::raw_to_str(&m!(base64::base64_to_raw(&plainb64)))));
+    assert_eq!(plain, r!(ascii::raw_to_str(&r!(base64::base64_to_raw(&plainb64)))));
 }
 
 
 #[test]
 fn test_more() {
     fn test(plain: &str) {
-        let raw = m!(ascii::str_to_raw(&plain));
-        let b64 = m!(base64::raw_to_base64(&raw));
-        let cbox = m!(cb::init(&b64));
-        let p = m!(bae::break_aes_ecb(&cbox));
+        let raw = r!(ascii::str_to_raw(&plain));
+        let b64 = r!(base64::raw_to_base64(&raw));
+        let cbox = r!(cb::init(&b64));
+        let p = r!(bae::break_aes_ecb(&cbox));
         assert_eq!(p, plain);
     }
 

@@ -5,11 +5,11 @@ use matasano::common::cipher::cipherbox as cb;
 
 
 fn test(plain: &str) {
-    let raw = m!(ascii::str_to_raw(&plain));
-    let b64 = m!(base64::raw_to_base64(&raw));
-    let mut cbox = m!(cb::init(&b64));
+    let raw = r!(ascii::str_to_raw(&plain));
+    let b64 = r!(base64::raw_to_base64(&raw));
+    let mut cbox = r!(cb::init(&b64));
     cbox.enable_random_prefix(bae2::max_random_data_length);
-    let p = m!(bae2::break_aes_ecb(&cbox));
+    let p = r!(bae2::break_aes_ecb(&cbox));
     assert_eq!(p, plain);
 }
 

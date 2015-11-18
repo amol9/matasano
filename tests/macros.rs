@@ -1,49 +1,40 @@
 
-//macro to check result
-macro_rules! m {
+// macro to check result
+macro_rules! r {
     ( $x : expr ) => ( match $x {
         Ok(v)   => v,
         Err(e)  => { println!("{}", e); assert!(false); return; }
     } );
 }
 
-
-//macro to check result and return specified value if error
-macro_rules! mr {
+// macro to check result and return specified value if error
+macro_rules! rr {
     ( $x : expr, $ret: expr ) => ( match $x {
         Ok(v)   => v,
         Err(e)  => { println!("{}", e); assert!(false); return $ret; }
     } );
 }
 
-
 // macro to check if error is thrown
-// on Ok  => return false
-// on Err => return true
-macro_rules! me {
+// on Ok  => false
+// on Err => true
+macro_rules! re {
     ( $x : expr ) => ( match $x {
-        Ok(v)   => false,
+        Ok(_)   => false,
         Err(e)  => { println!("{}", e); true }
     } );
 }
 
-
+// macro to check result and return None on error
 macro_rules! rn {
-    ( $x : expr ) => ( mr!( $x , None ) );
+    ( $x : expr ) => ( rr!( $x , None ) );
 }
-
-
-macro_rules! r {
-    ( $x : expr ) => ( m!( ascii::str_to_raw( $x ) ) );
-}
-
 
 macro_rules! raw {
-    ( $x : expr ) => ( m!( ascii::str_to_raw( $x ) ) );
+    ( $x : expr ) => ( r!( ascii::str_to_raw( $x ) ) );
 }
 
-
 macro_rules! rts {
-    ( $x : expr ) => ( m!( ascii::raw_to_str( $x ) ) );
+    ( $x : expr ) => ( r!( ascii::raw_to_str( $x ) ) );
 }
 

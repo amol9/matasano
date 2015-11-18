@@ -2,19 +2,11 @@ extern crate matasano;
 use self::matasano::common::hex;
 
 
-fn print_raw(raw: Vec<u8>) {
-	for i in raw {
-		print!("{} ", i);
-	}
-	println!("");
-}
-
-
 macro_rules! _gen {
 	( $x:expr, $y:expr, $z: expr, $fun: expr ) => (
 		match $fun($x) {
 			Ok(v)	=> assert_eq!(v, $y),
-			Err(e)	=> assert!($z),
+			Err(_)	=> assert!($z),
 		};
 	);
 }

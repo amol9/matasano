@@ -6,9 +6,9 @@ use matasano::common::ascii;
 #[test]
 fn test_pkcs7_unpad() {
     fn test(input: &str, bs: usize, exp: &str) -> bool {
-        let ir = mr!(ascii::str_to_raw(&input), false);
-        let out = mr!((padding::Pkcs7.unpad_fn)(&ir, bs), false);
-        let outs = mr!(ascii::raw_to_str(&out), false);
+        let ir = rr!(ascii::str_to_raw(&input), false);
+        let out = rr!((padding::Pkcs7.unpad_fn)(&ir, bs), false);
+        let outs = rr!(ascii::raw_to_str(&out), false);
         assert_eq!(outs, exp);
         true
     }
@@ -22,9 +22,9 @@ fn test_pkcs7_unpad() {
 #[test]
 fn test_pkcs7_pad() {
     fn test(input: &str, bs: usize, exp: &str) -> bool {
-        let ir = mr!(ascii::str_to_raw(&input), false);
-        let out = mr!((padding::Pkcs7.pad_fn)(&ir, bs), false);
-        let outs = mr!(ascii::raw_to_str(&out), false);
+        let ir = rr!(ascii::str_to_raw(&input), false);
+        let out = rr!((padding::Pkcs7.pad_fn)(&ir, bs), false);
+        let outs = rr!(ascii::raw_to_str(&out), false);
         assert_eq!(outs, exp);
         true
     }

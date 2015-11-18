@@ -4,10 +4,10 @@ use matasano::set3::paddingoracle as po;
 
 #[test]
 fn test_cryptopals_case() {
-    let obox = m!(po::OBox::new());
+    let obox = r!(po::OBox::new());
 
     for _ in 0 .. 5 {
-        assert!(obox.string_valid(m!(po::break_cbc(&obox).as_ref())));
+        assert!(obox.string_valid(r!(po::break_cbc(&obox).as_ref())));
     }
 }
 

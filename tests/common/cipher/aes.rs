@@ -4,14 +4,14 @@ use matasano::common::ascii;
 
 
 enum Op {
-    encrypt,
-    decrypt
+    Encrypt,
+    Decrypt
 }
 
 enum Mode {
-    ecb,
-    cbc,
-    ctr
+    Ecb,
+    Cbc,
+    Ctr
 }
 
 
@@ -37,13 +37,13 @@ impl Test {
         let olen: usize;
 
         match self.mode {
-            Mode::ecb | Mode::cbc => {
+            Mode::Ecb | Mode::Cbc => {
                 let mode = match self.mode {
-                    Mode::ecb => {
+                    Mode::Ecb => {
                         olen = (input.len() as f32 / self.blocksize as f32).ceil() as usize * self.blocksize;
                         aes::ecb_128_pkcs7
                     },
-                    Mode::cbc => {                                                                          // + iv length           
+                    Mode::Cbc => {                                                                          // + iv length           
                         olen = (input.len() as f32 / self.blocksize as f32).ceil() as usize * self.blocksize + self.blocksize; 
                         aes::cbc_128_pkcs7
                     },
@@ -51,13 +51,13 @@ impl Test {
                 };
 
                 match op {
-                    Op::encrypt => or = rn!(aes::encrypt(&ir, &kr, &mode)),
-                    Op::decrypt => or = rn!(aes::decrypt(&ir, &kr, &mode)),
+                    Op::Encrypt => or = rn!(aes::encrypt(&ir, &kr, &mode)),
+                    Op::Decrypt => or = rn!(aes::decrypt(&ir, &kr, &mode)),
                 };
             },
 
-            Mode::ctr => {
-                let mut ctr = aes::CTR::new(&kr, 0);
+            Mode::Ctr => {
+                let ctr = aes::CTR::new(&kr, 0);
                 or = rn!(ctr.gen(&ir));
                 olen = input.len();
             }
@@ -65,8 +65,8 @@ impl Test {
 
         assert!((ir.len() == 0 && or.len() == 0) || or != ir);
         match op {
-            Op::encrypt => assert_eq!(or.len(), olen),
-            Op::decrypt => assert!(or.len() <= input.len())
+            Op::Encrypt => assert_eq!(or.len(), olen),
+            Op::Decrypt => assert!(or.len() <= input.len())
         }
 
         println!("{}", rn!(ascii::raw_to_str(&or)));
@@ -75,12 +75,12 @@ impl Test {
 
 
     fn enc(&self, input: &str, key: &str) -> String {
-        self.encdec(&input, &key, Op::encrypt).unwrap()
+        self.encdec(&input, &key, Op::Encrypt).unwrap()
     }
 
 
     fn dec(&self, input: &str, key: &str) -> String {
-        self.encdec(&input, &key, Op::decrypt).unwrap()
+        self.encdec(&input, &key, Op::Decrypt).unwrap()
     }
 
 
@@ -95,7 +95,7 @@ impl Test {
 
 #[test]
 fn test_cbc_128_pkcs7() {
-    let test = Test::new(Mode::cbc);
+    let test = Test::new(Mode::Cbc);
 
     test.enc_dec("this is test message of length 33.", "YELLOW SUBMARINE");
     test.enc_dec("hello", "YELLOW SUBMARINE");
@@ -105,7 +105,7 @@ fn test_cbc_128_pkcs7() {
 
 #[test]
 fn test_ecb_128_pkcs7() {
-    let test = Test::new(Mode::ecb);
+    let test = Test::new(Mode::Ecb);
 
     test.enc_dec("this is test message of length 33.", "YELLOW SUBMARINE");
     test.enc_dec("hello", "YELLOW SUBMARINE");
@@ -116,7 +116,7 @@ fn test_ecb_128_pkcs7() {
 
 #[test]
 fn test_ctr() {
-    let test = Test::new(Mode::ctr);
+    let test = Test::new(Mode::Ctr);
 
     test.enc_dec("this is test message of length 33.", "YELLOW SUBMARINE");
     test.enc_dec("hello", "YELLOW SUBMARINE");

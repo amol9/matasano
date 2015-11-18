@@ -5,7 +5,7 @@ use self::matasano::set1::detectaesecb as dae;
 
 #[test]
 fn test_cryptopals_case() {
-    let result = m!(dae::detect_from_list("data/8.txt"));
+    let result = r!(dae::detect_from_list("data/8.txt"));
 
     assert_eq!(result.len(), 1);
     assert_eq!(result[0],
