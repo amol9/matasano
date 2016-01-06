@@ -16,7 +16,7 @@ Progress
 Platform
 ========
 
-* Rust 1.4.0
+* Rust 1.5.0
 * Linux
 
 

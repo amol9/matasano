@@ -96,7 +96,7 @@ pub fn read_file_to_str(filepath: &str) -> Result<String, err::Error> {
 pub fn hamming_distance(a: u8, b: u8) -> u8 {
     let mut d: u8 = 0;
     let diff = a ^ b;
-    for i in (0 .. 8) {
+    for i in 0 .. 8 {
         d += (diff >> i) & 1;
     }
     d
@@ -106,7 +106,7 @@ pub fn hamming_distance(a: u8, b: u8) -> u8 {
 pub fn hamm_vec(a: &Vec<u8>, b: &Vec<u8>) -> Result<u32, err::Error> {
     ctry!(a.len() != b.len(), "two blocks must be of same size");
     let mut d: u32 = 0;
-    for i in (0 .. a.len()) {
+    for i in 0 .. a.len() {
         d += hamming_distance(a[i], b[i]) as u32;
     }
     Ok(d)
