@@ -17,7 +17,7 @@ Platform
 ========
 
 * Rust 1.5.0
-* Linux
+* Linux / Windows
 
 
 Usage
