@@ -72,7 +72,7 @@ impl AuthBox {
         let mut output = String::from(input);
         
         for (c, r) in &self.escape_map {
-            output = output.replace(&c, &r);
+            output = output.replace(c, &r);
         }
         output
     }

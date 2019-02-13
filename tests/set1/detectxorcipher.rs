@@ -4,7 +4,7 @@ use self::matasano::set1::detectxorcipher as dxc;
 
 #[test]
 fn test_cryptopals_case() {
-    let data_filepath =  String::from("data/cryptopals_4.txt");
+    let data_filepath =  String::from("data/4.txt");
 
     
     let input = match dxc::read_input_file(&data_filepath) {

@@ -57,7 +57,7 @@ pub fn hex_char_to_u8(hex_char: char) -> Result<u8, err::Error> {
 	Err(err::make_error(format!("invalid hex digit {}", hex_char)))
 }
 
-pub fn u8_to_hex_char<T=Lower>(dec: u8) -> Result<char, err::Error> where T: Convert {
+pub fn u8_to_hex_char<T>(dec: u8) -> Result<char, err::Error> where T: Convert {
 	if dec > 15 {
 		return Err(err::make_error(String::from("must be a 4-bit decimal")));
 	}
@@ -70,7 +70,7 @@ pub fn u8_to_hex_char<T=Lower>(dec: u8) -> Result<char, err::Error> where T: Con
 	Ok(hex_char)
 }
 
-pub fn raw_to_hex<T=Lower>(raw: &Vec<u8>) -> Result<String, err::Error> where T: Convert {
+pub fn raw_to_hex<T>(raw: &Vec<u8>) -> Result<String, err::Error> where T: Convert {
 	let mut result: String = String::new();
 
 	for n in raw {
